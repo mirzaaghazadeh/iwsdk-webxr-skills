@@ -1,7 +1,7 @@
 # WebXR performance on Quest: measuring and fixing
 
 From Meta's WebXR performance pages (workflow and hub 2026-07-21; best practices and tools
-undated) plus the VRCs. Fetched 2026-10-16.
+undated) plus the VRCs. Fetched 2026-10-16; VR Glasses row added 2026-10-17.
 
 ## Targets
 
@@ -14,8 +14,12 @@ undated) plus the VRCs. Fetched 2026-10-16.
 | Render scale | ≥ 85% for most of the experience (Recommended) | VRC Performance.4 |
 | Native upper bounds | Quest 3: < 200 draw calls, < 1.5M tris, 90 Hz recommended; Quest 2: < 100 draw calls, < 750K tris | device-optimization-comparison (2026-05-11) |
 | Test length | content length or 45 minutes, whichever is shorter, with OVR Metrics Tool | VRC Performance.1 |
+| Meta VR Glasses (native facts) | Up to 120 Hz; render scale 1.0 = 1728 × 1760 per eye; steady state CPU/GPU level 4, no GPU level 5, CPU Boost briefly to level 8; 5.75 GiB PSS limit; battery saver forces 72 Hz and FFR; no draw-call or triangle targets published | compare-devices (2026-09-30), render-scale (2026-09-01), cpu-gpu-levels (2026-09-11), memory-ram (2026-08-31), battery-saver-mode (2026-04-08) |
 
 Quest 3S has no dedicated Meta spec page (unverified budgets; it reports `Quest 3` in the UA).
+For VR Glasses, the levels and dynamic-resolution advice are written for native engines; how
+Quest Browser applies them to WebXR is unverified.
+
 Numbers in `hz-iwsdk-webxr` ("50-80 draw calls on Quest 2, 100-120 on Quest 3", "keep total
 texture memory under 256 MB", "750K triangles per eye") are not on any Meta page: unverified.
 

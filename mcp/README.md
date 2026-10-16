@@ -38,6 +38,24 @@ for that session: ask first, and never enable it by default.
 `mcp.json.example` shows the shape for `metavr` alone (for example, to debug a headset from a
 folder that isn't an IWSDK app). Inside a project, use `adapter sync` instead.
 
+## Avoid duplicate Meta servers and skills
+
+Meta lists several ways to get `metavr` into an agent, and each registers **its own** server
+under its own name (Meta's troubleshooting page, 2026-08-27): `metavr init`, `metavr mcp install
+<target>`, the `meta-vr` plugin (`/plugin install meta-vr@meta-quest`, runs metavr through
+`npx`), the Meta Horizon extension for VS Code, and MQDH (a separate MCP server). In an IWSDK
+project keep the one `adapter sync` writes; check with `claude mcp list` and remove extras.
+`metavr init` and the `meta-vr` plugin also install Meta's skills, the same ones this library
+ships in `skills/meta-official/` (`metavr skills install` writes them to `~/.agents/skills`). Use
+one source. Meta XR Operator, the other MCP server on Meta's AI tools page, is an OpenXR layer for
+native apps and doesn't apply to WebXR.
+
+npm `metavr` / `@meta-quest/metavr` 1.8.1 (2026-10-01) changed only the download wrapper; the
+binary is still 1.8.0.17.10. The Unity library saw Claude Code reject that binary's `tools/list`
+results ([unity-meta-quest-skills `mcp/README.md`](https://github.com/mirzaaghazadeh/unity-meta-quest-skills/blob/main/mcp/README.md));
+if `/mcp` shows "tools fetch failed" for `metavr`, that is the cause. Not re-tested here.
+Overview of Meta's AI tools: [docs/meta-reference/ai-tools.md](../docs/meta-reference/ai-tools.md).
+
 ## Older names
 
 `iwsdk`, `iwsdk-dev-mcp`, `iwsdk-rag-local` and `hzdb` are legacy server names that `adapter sync`
@@ -49,3 +67,7 @@ treats as managed and replaces. `@iwsdk/reference` replaces the earlier stand-al
 - https://iwsdk.dev/ai/ and https://iwsdk.dev/ai/mcp-tools.html
 - IWSDK 1.0.1 source: `packages/cli/src/mcp-adapters.ts` (https://github.com/facebook/immersive-web-sdk)
 - `skills/custom/iwsdk-project-setup/references/claude-code-mcp.md` (full details)
+- Meta: https://developers.meta.com/vr/essentials/metavr-install/ (2026-08-31),
+  https://developers.meta.com/vr/essentials/metavr-other-tools/ (2026-08-31),
+  https://developers.meta.com/vr/essentials/metavr-troubleshooting/ (2026-08-27),
+  https://developers.meta.com/vr/discover/ai-tools/

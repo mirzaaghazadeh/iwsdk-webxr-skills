@@ -5,23 +5,23 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.2.0"
 description: >-
-  Finds and fixes frame-rate and load-time problems in IWSDK WebXR apps on Meta
-  Quest Browser, using Meta's WebXR performance workflow: frame budgets, CPU vs
-  GPU vs vertex vs fragment bound tests, frame-time logging comparable with OVR
-  Metrics (percentiles, hitches, CPU and GPU work time), draw calls and
-  instancing, many animated characters (animation LOD, vertex animation
-  textures), triangles, textures, lights and shadows, fixed foveation
-  (`renderer.xr.setFoveation`, default 1.0), framebuffer scale, target frame
-  rate (`supportedFrameRates`, `updateTargetFrameRate`), multiview (already on),
-  WebXR quad/cylinder layers, IWSDK feature flags that cost CPU or bundle size,
-  built-in locomotion input latency, and bundle/loading checks. Every number is
-  sourced. Use when the user says "it stutters on the Quest", "low FPS", "frame
-  drops", "hitches", "optimize for Quest", "too many draw calls", "GPU bound",
-  "foveation", "run at 90 Hz", "framebuffer scale", "input lag", "crowd of
-  enemies", "benchmark", "slow to load", "bundle too big", or before a store
-  build.
+  Finds and fixes frame-rate and load-time problems in IWSDK WebXR apps in
+  Meta Quest Browser (Quest 2/3/3S, and what Meta documents for Meta VR
+  Glasses) with Meta's WebXR performance workflow: frame budgets, CPU vs GPU
+  vs vertex vs fragment tests, frame-time logging comparable with OVR Metrics
+  (percentiles, hitches, CPU/GPU work time), draw calls and instancing,
+  animated crowds (animation LOD, vertex animation textures), triangles,
+  textures, lights, shadows, fixed foveation (default 1.0), framebuffer
+  scale, target frame rate (`supportedFrameRates`, `updateTargetFrameRate`),
+  multiview (already on), quad/cylinder layers, costly IWSDK feature flags,
+  locomotion input latency, and bundle/loading checks, all sourced. Use when
+  the user says "it stutters on the
+  Quest", "low FPS", "frame drops", "hitches", "optimize for Quest", "too
+  many draw calls", "GPU bound", "foveation", "run at 90 Hz", "framebuffer
+  scale", "input lag", "crowd of enemies", "benchmark", "slow to load",
+  "bundle too big", or before a store build.
 ---
 
 # IWSDK performance on Meta Quest
@@ -76,9 +76,20 @@ on the device lives in **`iwsdk-quest-device-testing`**.
 |---|---|---|---|
 | Quest 2 | < 100 | < 750K | 72 Hz |
 | Quest 3 | < 200 | < 1.5M | 72 Hz (90 Hz recommended) |
+| Meta VR Glasses | not published | not published | display up to 120 Hz |
 
-  (No figures there for Quest 3S or Quest Pro. Meta's Unity performance page gives wider ranges by
-  app type; prefer the stricter numbers above for WebXR.)
+  (No figures there for Quest 3S, Quest Pro or VR Glasses. Meta's Unity performance page gives
+  wider ranges by app type; prefer the stricter numbers above for WebXR.)
+- **Meta VR Glasses** (ships spring 2027; native-engine facts, how Browser applies them to WebXR
+  is unverified): render scale 1.0 = 1728 × 1760 per eye, about 3% more pixels than Quest 3's
+  1680 × 1760, so start from the Quest 3 budget; steady state CPU/GPU level 4 with no GPU
+  level 5 (CPU Boost briefly to level 8; passthrough can lower the levels); 5.75 GiB app memory
+  limit like Quest 3/3S; battery saver forces 72 Hz and FFR; heat is managed separately for the
+  glasses and the compute puck, so the 45-minute run matters more than a short demo. IWER's
+  `metaVRGlasses` profile lists 72/90/96/100/120 Hz: emulator data. Meta's render-scale page
+  recommends dynamic resolution on the glasses; WebXR fixes `framebufferScaleFactor` before the
+  session (super-three), so there is no IWSDK equivalent today. Device setup and gaze:
+  `iwsdk-vr-glasses`.
 - Don't assume a default refresh rate. Meta's frame-rate page gives defaults only for older
   devices. Read `session.frameRate` on the device (probe in `iwsdk-quest-device-testing` §4).
 - Generic Quest Browser WebXR features and knobs (not IWSDK-specific): `quest-browser-webxr`.
@@ -274,6 +285,7 @@ don't exist or don't apply to IWSDK 1.x. Details and sources:
 - [ ] `castShadow` only on grounded focal objects; one main light with PBR
 - [ ] No per-frame allocations in systems (run `iwsdk-project-code-reviewer`)
 - [ ] `dev.emulator.injectOnBuild` is not `true`; dev-only probes removed
+- [ ] VR Glasses in scope: same run with hands only, and with `world.features.gaze.showDebugReticle` off
 
 ## Sources
 
@@ -288,6 +300,7 @@ don't exist or don't apply to IWSDK 1.x. Details and sources:
 - https://github.com/facebook/immersive-web-sdk (1.0.1): `packages/core/src/init/world-initializer.ts` (`multiviewStereo: true`; `LocomotionSystem` priority −5, `InputSystem` −4), `src/project/validation.ts` (physics and locomotion keys), `src/init/xr.ts` (default `layers` offer), `src/asset/loaders/gltf-loader.ts`, `packages/xr-input/src/gamepad/input-profiles.ts`, `docs/guides/08-build-deploy.md`, `docs/concepts/locomotion/performance.md`, `examples/layers/`
 - npm `iwer@2.6.0`, `lib/device/XRDevice.js` (`Object.defineProperty(navigator, 'userAgent', …)`)
 - https://registry.khronos.org/webgl/extensions/EXT_disjoint_timer_query_webgl2/ (GPU timer queries, `GPU_DISJOINT_EXT`)
+- Meta VR Glasses: https://developers.meta.com/horizon/essentials/compare-devices/ (2026-09-30), /render-scale/ (2026-09-01), /cpu-gpu-levels/ (2026-09-11), /boost-cpu-gpu-levels/ (2026-09-11), /memory-ram/ (2026-08-31), /thermal/ (2026-09-15), /battery-saver-mode/ (2026-04-08), /test-your-app/ (2026-09-25); npm `iwer` 2.6.0 `lib/device/configs/headset/meta.js` (`metaVRGlasses` frame rates)
 - Crowd rendering, input-delay measurements, emulator frame rate and bundle sizes: an IWSDK 1.0.1 VR prototype, IWER emulator and production build, 2026-10-16 (headset numbers pending)
 
 Last verified: 2026-10-17

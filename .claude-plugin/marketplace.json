@@ -7,14 +7,14 @@
     "url": "https://github.com/mirzaaghazadeh"
   },
   "metadata": {
-    "version": "1.0.0"
+    "version": "1.1.0"
   },
   "plugins": [
     {
       "name": "iwsdk-core",
       "displayName": "IWSDK Core",
-      "description": "Start here. The path from idea to Horizon Store for an IWSDK WebXR app: workflow router, verify-first guardrail, project setup and MCP wiring, Quest Browser WebXR features, asset pipeline, automated tests, headset testing, performance, Perfetto, comfort design, hosting-to-store release pipeline, web VRC audit, store listing and launch planning. Works next to a project scaffolded with npm create @iwsdk, which already has IWSDK's own skills.",
-      "version": "1.0.0",
+      "description": "Start here. The path from idea to Horizon Store for an IWSDK WebXR app: workflow router, verify-first guardrail, project setup and MCP wiring, Quest Browser WebXR features, Meta VR Glasses readiness, asset pipeline, automated tests, headset testing, performance, Perfetto, comfort design, hosting-to-store release pipeline, web VRC audit, store listing and launch planning. Works next to a project scaffolded with npm create @iwsdk, which already has IWSDK's own skills.",
+      "version": "1.1.0",
       "author": { "name": "Navid Mirzaaghazadeh", "url": "https://github.com/mirzaaghazadeh" },
       "homepage": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
       "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
@@ -29,6 +29,7 @@
         "./skills/meta-official/metavr-cli",
         "./skills/custom/iwsdk-project-setup",
         "./skills/custom/quest-browser-webxr",
+        "./skills/custom/iwsdk-vr-glasses",
         "./skills/custom/iwsdk-asset-pipeline",
         "./skills/custom/iwsdk-testing",
         "./skills/custom/iwsdk-quest-device-testing",
@@ -46,7 +47,7 @@
       "name": "iwsdk-official",
       "displayName": "IWSDK Official",
       "description": "The IWSDK team's own skills and code-review agent: iwsdk-dev entry point, models, scenes, spatial UI, grab, ray, debugging, physics, depth occlusion, real-Quest test automation, hosting, PWA packaging and the 0.4 to 0.5 migration. Skip this bundle in projects made with npm create @iwsdk: they already contain the same skills in .claude/skills.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": { "name": "Meta Platforms, Inc. / IWSDK team (curated by Navid Mirzaaghazadeh)" },
       "homepage": "https://github.com/facebook/immersive-web-sdk",
       "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
@@ -75,7 +76,7 @@
       "name": "meta-web-extras",
       "displayName": "Meta Web Extras",
       "description": "Meta's other official skills that touch web apps: Meta's IWSDK skill (written for IWSDK 0.4; see ERRATA), Meta's PWA store guide, the general store-submission walkthrough, Meta's multi-stack project scaffolder and simpleperf CPU profiling.",
-      "version": "1.0.0",
+      "version": "1.0.1",
       "author": { "name": "Meta Platforms, Inc. (curated by Navid Mirzaaghazadeh)" },
       "homepage": "https://github.com/meta-quest/agentic-tools",
       "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",

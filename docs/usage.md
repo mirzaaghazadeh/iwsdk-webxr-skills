@@ -28,6 +28,7 @@ Open Claude Code in your IWSDK project (or an empty folder for a new game) and s
 | 3 | Tests | "Add a smoke test and a GitHub Actions job." | `iwsdk-testing` |
 | 4 | On the Quest | "Open the dev server on my Quest over USB and show me the console." | `iwsdk-quest-device-testing`, `hz-vr-debug` |
 | 4 | Automation | "Script a real Quest session that grabs a die and checks it lands." | `iwsdk-native-xr-test` |
+| 4 | VR Glasses | "Make my game work on Meta VR Glasses without controllers, and test it in the emulator." | `iwsdk-vr-glasses`, `quest-browser-webxr` |
 | 5 | Performance | "It drops frames when 20 dice are on the table. Find out why." | `iwsdk-performance`, `hz-perfetto-debug` |
 | 5 | Review | "Use the iwsdk-project-code-reviewer agent to review src/." | IWSDK review agent |
 | 6 | Host | "Deploy to Cloudflare Pages and make sure /.well-known/ is served." | `iwsdk-hosting`, `wrangler` |

@@ -19,7 +19,7 @@ You need these to **use** the skills, not to install them:
 | Claude Code | Runs the skills. v2.1.275+ for the one-step plugin install | https://code.claude.com |
 | Node.js `>=20.19 <21`, `>=22.12 <23`, or `>=24` | IWSDK 1.0.1's supported ranges | https://nodejs.org |
 | An IWSDK project | The skills work inside it | `npm create @iwsdk@latest my-app` (the `iwsdk-project-setup` skill picks the flags) |
-| A Quest in Developer Mode, plus `adb` | Testing on the device | https://developers.meta.com/horizon/documentation/native/android/mobile-device-setup/ |
+| A Quest in Developer Mode, plus `adb` | Testing on the device | https://developers.meta.com/vr/documentation/native/android/mobile-device-setup/ |
 | Meta developer account and organization | Publishing to the Horizon Store | https://developer.meta.com |
 
 The scaffold installs the IWSDK CLI, the IWER emulator runtime and Meta's `metavr` into the
@@ -37,7 +37,7 @@ community bundles), but **not `iwsdk-official`**.
 
 | Bundle | Skills | Always-on context | Contents |
 |---|---|---|---|
-| `iwsdk-core` | 16 | ~3.0k tokens | **Start here.** Router, guardrail, metavr, setup + MCP, Quest Browser features, assets, tests, headset testing, performance, Perfetto, comfort, release pipeline, web VRCs, store listing, launch plan |
+| `iwsdk-core` | 17 | ~3.7k tokens | **Start here.** Router, guardrail, metavr, setup + MCP, Quest Browser features, Meta VR Glasses readiness, assets, tests, headset testing, performance, Perfetto, comfort, release pipeline, web VRCs, store listing, launch plan |
 | `iwsdk-official` | 13 + agent | ~1.0k | IWSDK team's skills and review agent. Not for scaffolded projects |
 | `meta-web-extras` | 5 | ~0.4k | Meta's IWSDK skill (0.4 era), PWA store guide, submission walkthrough, scaffolder, simpleperf |
 | `community-web` | 10 | ~1.1k | pmndrs libraries under IWSDK, three.js loading, Playwright, service workers, Cloudflare |
@@ -79,7 +79,7 @@ Add more bundles the same way. Plugin skills show up with the bundle as a prefix
 
 ## B. `npx skills`
 
-[skills.sh](https://skills.sh)'s CLI finds all 56 skills, grouped by bundle. Agents aren't
+[skills.sh](https://skills.sh)'s CLI finds all 57 skills, grouped by bundle. Agents aren't
 installed this way.
 
 ```bash

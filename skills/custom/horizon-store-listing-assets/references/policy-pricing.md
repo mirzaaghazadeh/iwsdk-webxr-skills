@@ -1,9 +1,9 @@
 # Store policy, pricing and promotion details (web apps)
 
-Values from developers.meta.com, fetched 2026-10-16; page dates in brackets. Items marked
-**unverified** were not confirmed on a Meta page: look them up with `metavr docs search "<topic>"`
-before quoting them. Sections 1-7 are engine-neutral and match the Unity edition of this skill;
-section 8 is web-specific.
+Values from developers.meta.com (now under `/vr/resources/<page>/`), fetched 2026-10-16; section
+9 added 2026-10-17. Page dates in brackets. Items marked **unverified** were not confirmed on a
+Meta page: look them up with `metavr docs search "<topic>"` before quoting them. Sections 1-7 and
+9 are engine-neutral and match the Unity edition of this skill; section 8 is web-specific.
 
 ## 1. Prerequisites to publish
 - **Org verification** [2026-08-24]: admin (government ID, usually minutes) or business
@@ -72,7 +72,7 @@ section 8 is web-specific.
   features stop. Children: no Get Age Category API, no Platform SDK features.
 - The age-groups table marks "No ads" as required for every age group, while its text only says
   to comply with Meta's app and ads policies, and Ads.1-7 regulate ad-supported apps. Ambiguous:
-  confirm at https://developers.meta.com/horizon/policy/app-policies/ before planning ads.
+  confirm at https://developers.meta.com/vr/policy/app-policies/ before planning ads.
 - DUC: required for Platform SDK features (User ID, User Profile, Followers, Invites, Blocked
   Users, Matchmaking, Parties, Deep Linking, Avatars, Challenges, IAP, Subscriptions, User Age
   Group). Auto-approved during development until the first review submission or raised channel
@@ -111,3 +111,33 @@ section 8 is web-specific.
   in the Dashboard without buying [ps-iap-test]. Never use real card numbers with test users.
 - **Cross-platform note:** Meta's Horizon Billing sample is for native Android (Horizon Billing
   Compatibility SDK mirroring Google Play Billing), not for PWAs.
+- **Achievements** (web ps-achievements 2026-10-14): defined in the Dashboard (Engagement >
+  Achievements) and written only server-to-server (`POST https://graph.oculus.com/<USER_ID>/achievements`
+  with the app token), using the user ID from `getLoggedInUserId()`. Needs the DUC.
+
+## 9. Experiments, trials, bundles and analytics [2026-10-17]
+- **Price A/B testing** [monetization-price-ab-testing 2025-10-01]: Growth > Price A/B Testing >
+  Create Pricing Experiment (App Submission, Manage App, View App permissions). Boundary or
+  incrementality test; starts ≥ 3 days after setup; up to 90 days; 11:00 Pacific; **US only**; no
+  edits after submit; results by email; ending within 30 days of a sale may cost sale eligibility.
+  Connect 2026 named "A/B Pricing" as new (session posted 2026-09-30); **unverified** what changed.
+- **Try Before You Buy** [try-before-you-buy 2026-06-29]: Growth > Try before you buy. Time-based
+  15-30 min or achievement-based (a "simple" achievement ends the trial, optional fallback time).
+  Audience 25-100%; below 100% = 30-day experiment; ≤ 50% suggested at first. No IAP during a
+  trial. **Not available for 2D apps**; immersive PWAs not mentioned (**unverified**).
+- **Bundles** [monetization-bundles 2026-06-30; Meta blog 2026-08-11]: join store-wide sales via
+  promo groups, per-country base price, live edits without review (descriptions/assets still
+  reviewed), scheduled changes 3 days out.
+- **Add-ons** [working-with-add-ons 2026-10-14; add-ons-setup 2026-09-28]: bulk TSV in USD; an
+  unconsumed consumable is refunded after **3 days** (call `consume_entitlement` server-side);
+  Store-visible add-ons need about 7 days of review.
+- **Meta Credits** [2026-06-09]: no longer usable for Store purchases.
+- **Analytics** [publish-metrics-benchmarks 2026-05-22; user-demographics 2026-05-06;
+  publish-analytics-alerts 2025-10-01; publish-performance-analytics 2025-02-14]: benchmarks and
+  alerts need > 100 lifetime active users, demographics ≥ 100 plus DUC compliance. No crash or
+  performance alerts for 2D apps; performance analytics not available for web apps; the alerts
+  page says alerts are "not enabled on MQDH or web". Threshold alerts (Meta blog 2026-08-11):
+  crash rate > 5%, Quest 3 average FPS < 72, each 1-star rating, startup > 19 s.
+- **unverified**: Connect's "AI-Powered Analytics", "advanced F2P tooling" and "PREQ alerts". The
+  read-only Meta AI Developer Assistant [ai-developer-assistant 2026-09-24] answers analytics,
+  monetization and reviewer-feedback questions in the Dashboard.

@@ -5,21 +5,22 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.2.0"
 description: >-
   Tests an IWSDK WebXR app on a physical Meta Quest in Quest Browser: developer
-  mode and adb checks, opening the dev server over Wi-Fi or USB (`adb reverse`),
-  the self-signed certificate, serving the production build over HTTPS for
-  headset benchmarks, getting benchmark results off the headset without
-  DevTools, remote DevTools through chrome://inspect, device logs and
-  screenshots with metavr, reading the real session frame rate and enabled
-  features, the OVR Metrics Tool performance HUD, and a checklist of what only
-  the headset proves. Use when the user says "test on my Quest", "open it in
-  the headset", "Enter VR button missing", "works in the emulator but not on
-  the Quest", "test the production build on the Quest", "save results from the
-  headset", "kicked out of VR when I save", "inspect Quest Browser", "remote
-  debug", "adb reverse", "headset logs", "what FPS is it running at", or before
-  any store build. For scripted pose/input control of a real session, hand off
+  mode and adb checks, the dev server over Wi-Fi or USB (`adb reverse`) and
+  its certificate, the production build over HTTPS for benchmarks, getting
+  results off the headset, remote DevTools via chrome://inspect, metavr logs
+  and screenshots, the real frame rate, OVR Metrics, a headset-only
+  checklist, and Meta VR Glasses prep on a Quest 3/3S (head-gaze preview,
+  `metavr device fov-sim`, hands-only run).
+  Use when the user says "test on my Quest", "open it in the headset", "Enter
+  VR button missing", "works in the emulator but not on the Quest", "test the
+  production build on the Quest", "save results from the headset", "kicked
+  out of VR when I save", "inspect Quest Browser", "remote debug", "adb
+  reverse", "headset logs", "what FPS is it running at", "test for Meta VR
+  Glasses without the device", "simulate the glasses field of view", or
+  before any store build. For scripted control of a real session, hand off
   to `iwsdk-native-xr-test`.
 ---
 
@@ -246,6 +247,44 @@ whether it attributes Quest Browser WebXR frames usefully is **unverified**.
 - [ ] Exit XR and re-enter: state resets correctly; ScreenSpace UI comes back
 - [ ] Headset sleep / wake (proximity sensor) and system menu: app pauses on `VisibleBlurred`
 
+## 7. Preparing for Meta VR Glasses on a Quest
+
+The glasses ship in spring 2027; Meta's advice until then is to test on a Quest 3 or 3S. Their
+users aim with their eyes, pinch to select, often have no controllers, and see 70° × 66°. App
+changes (config, gaze UI, controller-free flows) are in **`iwsdk-vr-glasses`**; this is the
+headset routine.
+
+1. **Head-directed gaze preview.** With `world.xr.features.gazeTracking` set, add
+   `"dev": { "targetDevicePreview": { "gazeSimulation": "head" } }` to `iwsdk.config.json`
+   (IWSDK 1.0.1; dev server only, needs `dev.emulator.iwer` left on). The native Quest Browser
+   session keeps its viewer, hands, controllers and frame timing, plus a test gaze source that
+   follows the head. The console's `[iwsdk][gaze]` lines show whether gaze was granted, missing,
+   invalid or head-mapped. It proves plumbing, not eye-tracking accuracy.
+2. **Field-of-view simulation** (ask first: it changes a headset setting until disabled or
+   rebooted). Needs a developer-mode Quest 3, 3S or Pro:
+   ```bash
+   npm exec metavr -- device fov-sim enable              # nominal 70° × 66°
+   npm exec metavr -- device fov-sim enable --perceived  # p90 perceived 58° × 54°
+   npm exec metavr -- device fov-sim disable             # always restore afterwards
+   ```
+   If the view doesn't change, take the headset off and on, or sleep/wake it, or relaunch the
+   page. Check the boundary through the lenses: casts and screenshots only show the crop on
+   Horizon OS v209+, and before v209 the simulation doesn't clip compositor layers (WebXR
+   quad/cylinder layers).
+3. **Hands only.** Put the controllers down (the session switches to hands) and complete every
+   required flow: entering XR, menus, dialogs, scrolling, grabbing, locomotion, pause and exit.
+   Then pick the controllers up mid-flow and put them down again: focus, held objects and open
+   dialogs must stay valid (Meta's VR Glasses test procedure).
+4. **Layout.** In the simulated view, check the first view after launch and after a recenter,
+   menus, captions, error messages, and targets near each edge. Note anything clipped or
+   reachable only by an unexpected head turn.
+5. **Sustained run.** Heaviest scene for the content length or 45 minutes (§5), so the result
+   can be compared once VR Glasses hardware (with its separate glasses and puck thermals) is
+   available.
+
+Don't follow `world.features.fieldOfViewMask` from Meta's hosted IWSDK guide: IWSDK 1.0.1
+rejects the key (`docs/meta-reference/web-iwsdk-docs-on-meta.md`).
+
 ## Troubleshooting
 
 | Symptom | Check |
@@ -259,6 +298,8 @@ whether it attributes Quest Browser WebXR frames usefully is **unverified**.
 | Dropped out of VR whenever a file is saved | Expected in dev: an edit reloads the page, which ends the XR session (headset and emulator). Batch edits, warn whoever wears the headset, re-enter XR; play-test on `vite preview` (§4a) |
 | Assets missing only on device | Network tab: 404 from a hard-coded `/path` (use `import.meta.env.BASE_URL`), or CORS on a CDN |
 | `device unauthorized` | Re-plug and accept the USB debugging prompt in the headset |
+| Dev server rejects `iwsdk.config.json` after following Meta's VR Glasses page (`unknown property "fieldOfViewMask"`) | That key isn't in IWSDK 1.0.1; remove it and use §7 (also `suppressWhenHandPointerActive` → `suppressWhenDirectPointerActive`) |
+| Headset's field of view stays narrow | `metavr device fov-sim disable`, then take the headset off and on (a reboot also clears it) |
 
 ## Sources
 
@@ -272,5 +313,6 @@ whether it attributes Quest Browser WebXR frames usefully is **unverified**.
 - npm `@iwsdk/vite-plugin-dev@1.0.1` `dist/index.js` (certificate cached in `.iwsdk/https`, written as `_cert.pem`)
 - https://vite.dev/config/preview-options (`preview.https`, `preview.host`, `preview.port`), https://vite.dev/guide/api-plugin (`configureServer`, `configurePreviewServer`)
 - Production preview, results endpoint and the reload-ends-XR behaviour: an IWSDK 1.0.1 VR prototype, 2026-10-16
+- Meta VR Glasses: https://developers.meta.com/horizon/essentials/field-of-view/ (2026-09-25; `fov-sim`, v209 notes), /test-your-app/ (2026-09-25), /get-started-with-glasses/ (2026-10-13); IWSDK 1.0.1 `docs/concepts/xr-input/gaze.md` (`targetDevicePreview`), npm `@iwsdk/core` 1.0.1 `dist/project/validation.js`, npm `@iwsdk/vite-plugin-dev` 1.0.1 `dist/index.js` (`targetDevicePreview` requires IWER)
 
 Last verified: 2026-10-17

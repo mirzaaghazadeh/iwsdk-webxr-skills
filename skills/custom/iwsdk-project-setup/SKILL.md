@@ -5,22 +5,23 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.2.0"
 description: >-
   Sets up a machine and a project for Meta Immersive Web SDK (IWSDK) WebXR
   development with Claude Code: checks Node, maps the game pitch to
   `npm create @iwsdk@latest` flags (vr/ar/browser, physics, locomotion,
-  grabbing, scene understanding), explains what the scaffold writes (AGENTS.md,
-  CLAUDE.md, .claude skills/rules/agent), connects Claude Code to the
-  iwsdk-runtime, iwsdk-reference and metavr MCP servers with `adapter sync`,
-  starts the CLI-managed dev server (HTTPS, port 8081, IWER emulator, agent or
-  collaborate mode), and fixes headless/cloud setups (IWSDK_GPU, Playwright
-  Chromium). Use when starting a new IWSDK or WebXR project, when the user says
-  "set up IWSDK", "npm create @iwsdk", "scaffold a WebXR game", "MCP tools
-  missing", "iwsdk-runtime not connected", "Node version unsupported", "port
-  8081 in use", "Executable doesn't exist" (Playwright), "EALLOWSCRIPTS" or
-  "--allow-scripts not allowed" during the scaffold's install, when cloning a
-  teammate's IWSDK repo, or when adding IWSDK to an existing Vite app.
+  grabbing, scene understanding), explains the generated files (AGENTS.md,
+  .claude skills/rules/agent), connects Claude Code to the
+  iwsdk-runtime (55 tools), iwsdk-reference and metavr MCP servers with
+  `adapter sync`, starts the CLI-managed dev server (HTTPS, port 8081, IWER
+  incl. `metaVRGlasses`, agent or collaborate mode), and fixes
+  headless/cloud setups (IWSDK_GPU, Playwright Chromium). Use when starting
+  an IWSDK or WebXR project, when the user says "set up IWSDK", "npm create
+  @iwsdk", "scaffold a WebXR game", "MCP tools missing", "which MCP tools
+  exist", "iwsdk-runtime not connected", "Node version unsupported", "port
+  8081 in use", "Executable doesn't exist" (Playwright), "EALLOWSCRIPTS" in
+  the scaffold's install, when cloning a teammate's IWSDK repo, or when adding
+  IWSDK to an existing Vite app.
 ---
 
 # IWSDK project setup
@@ -46,7 +47,13 @@ Hand-offs: building features → **`iwsdk-dev`**; testing on a Quest → **`iwsd
 - Always use the scoped name `npx @iwsdk/cli ...` (never an unscoped `iwsdk` package via npx).
   The scope is a security boundary: npx could fetch an unrelated package otherwise.
 - Check flags with `--help` before relying on them: `npx @iwsdk/create@latest --help`,
-  `npx @iwsdk/cli dev up --help`. This skill was checked against 1.0.1.
+  `npx @iwsdk/cli dev up --help`. This skill was checked against 1.0.1 (npm `latest`;
+  `1.1.0-rc.1` sits on `next` and moves `three` to `super-three@0.185.0`: use it only if the
+  user asks).
+- **IWSDK's docs on Meta's site** (https://developers.meta.com/vr/documentation/iwsdk/guides/overview/)
+  were generated from IWSDK 0.5.3. They show unscoped `npx iwsdk …`, port 5173, 45 MCP tools
+  and two VR Glasses config keys 1.0.1 rejects. Prefer the installed package and
+  https://iwsdk.dev; differences: `docs/meta-reference/web-iwsdk-docs-on-meta.md`.
 
 ## 1. Check the machine
 
@@ -130,7 +137,7 @@ npx @iwsdk/cli reference status
 
 | Server | Runs | Gives Claude |
 |---|---|---|
-| `iwsdk-runtime` | `@iwsdk/cli/dist/cli.js mcp stdio` | `xr_*`, `browser_*`, `scene_*`, `ecs_*`, `ui_*`, `asset_*` tools on the running app |
+| `iwsdk-runtime` | `@iwsdk/cli/dist/cli.js mcp stdio` | 55 tools in 1.0.1: `xr_*` (16), `browser_*` (6), `scene_*` (13, incl. 3 live-runtime inspectors), `ecs_*` (11), `ui_*` (3), `asset_render_preview`, `runtime_*` (5, session and headset pairing). Meta's pages say 45 (0.5.3) or 32; trust `npx @iwsdk/cli mcp inspect` |
 | `iwsdk-reference` | `@iwsdk/reference` entrypoint | semantic search, API lookup, component/system lists |
 | `metavr` | `@meta-quest/metavr/bin.js mcp server` | Quest device control, Meta docs search, 3D asset search |
 
@@ -160,7 +167,8 @@ npx @iwsdk/cli dev down
 
 - The developer owns headed vs headless. Announce a change before restarting.
 - Wait for `browserCommandReady: true` before browser, XR or ECS commands; `dev up` can return
-  earlier.
+  earlier. (Meta's AI page also names `state.session.browser.commandReady`; in 1.0.1
+  `browserCommandReady` is computed from it.)
 - Port **8081** (`vite.config.ts` `server.port`) fails if busy instead of moving. Stop the other
   process (`lsof -i :8081`) or change the port.
 - HTTPS is on: `iwsdkDev()` generates a self-signed certificate cached in `.iwsdk/https` and
@@ -175,12 +183,16 @@ In `iwsdk.config.json` → `dev.emulator` (defaults from `@iwsdk/vite-plugin-dev
 
 | Key | Default | Notes |
 |---|---|---|
-| `device` | `metaQuest3` | also `metaQuest2`, `metaQuestPro`, `metaVRGlasses` (adds gaze), `oculusQuest1` |
+| `device` | `metaQuest3` | also `metaQuest2`, `metaQuestPro`, `metaVRGlasses`, `oculusQuest1`. `metaVRGlasses` (IWSDK 1.0.0+, IWER 2.5.0+) = Quest 3 capabilities plus the glasses' view mask (74° × 68°: 25° up, 43° down) and a gaze source; pick **Gaze + Hands** in the toolbar (`iwsdk-vr-glasses`) |
 | `activation` | `localhost` | emulate only on localhost; `always` or a RegExp |
 | `userAgentException` | `/OculusBrowser/` | never emulate in Quest Browser |
-| `environment` | none (AR scaffolds use `living_room`) | `living_room`, `meeting_room`, `music_room`, `office_large`, `office_small` |
+| `environment` | none (AR scaffolds use `living_room`) | `living_room`, `meeting_room`, `music_room`, `office_large`, `office_small`. 1.1.0-rc.1 replaces them with `sunlit_living_room`, `home_office`, `conference_room`, `open_office`, `kitchen`, `bedroom`, `music_studio`, `open_studio` (old ids still load, mapped) |
 | `iwer` | `true` | `false` = never inject (browser-only apps) |
 | `injectOnBuild` | `false` | keep `false` for store builds |
+
+Next to it, `dev.targetDevicePreview.gazeSimulation: "head"` (1.0.1) adds a head-directed test
+gaze source to a real Quest session when the app requests `gazeTracking`; dev server only, and
+it needs `iwer` left on (`iwsdk-quest-device-testing` §7).
 
 ## 7. Cloud and headless machines
 
@@ -249,5 +261,8 @@ the first `npm install`, what it does:
 - https://iwsdk.dev/skill.md (headless GPU and Playwright notes)
 - https://www.npmjs.com/package/@iwsdk/create (1.0.1, 2026-10-16)
 - `EALLOWSCRIPTS` with npm 11.19 and the `install-scripts` fix: seen while scaffolding an IWSDK 1.0.1 VR prototype, 2026-10-16
+- npm `@iwsdk/cli` 1.0.1 `dist/cli.js` (`RUNTIME_MCP_TOOLS`, `tools/list`, `isRuntimeBrowserCommandReady`); npm `@iwsdk/core` 1.0.1 and 1.1.0-rc.1 `dist/project/types.d.ts`, `environments.js` (read 2026-10-17; `next` tag 1.1.0-rc.1 published 2026-10-13)
+- https://developers.meta.com/horizon/documentation/iwsdk/ai/mcp-tools/ (2026-09-04, "45 tools", IWSDK 0.5.3), /ai/getting-started/ (2026-09-23)
+- npm `iwer` 2.6.0 `lib/device/configs/headset/meta.js` (`metaVRGlasses` view mask)
 
 Last verified: 2026-10-17

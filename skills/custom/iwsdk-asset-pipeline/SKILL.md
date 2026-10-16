@@ -5,23 +5,20 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.1.1"
 description: >-
   Prepares 3D models, textures, HDR maps and audio for an IWSDK WebXR app on
-  Meta Quest: which formats and glTF extensions IWSDK 1.x can load through its
-  manifest (Draco and KTX2 yes, Meshopt no), loading Meshopt files and
-  standalone KTX2 textures with your own loader and local decoders (no CDN),
-  converting FBX/OBJ in Blender, optimizing GLB files with gltf-transform using
-  IWSDK-safe flags (`--compress draco`, `--texture-compress ktx2`), gltf-transform
-  scripting traps (palette UV slots, join skipping skinned meshes), checking
-  files with a bundled script, sourcing assets and checking their licences
-  (metavr asset search, @iwsdk/example-assets, Kenney, Quaternius), and
-  registering them in `src/assets.ts` with the right load priority. Use when
-  the user says "add this model", "import FBX", "optimize GLB", "compress
-  textures", "KTX2", "Draco", "meshopt", "model won't load",
-  "setMeshoptDecoder must be called", "load assets offline", "model renders
-  black after merging materials", "the app is slow to load", "asset too big",
-  or asks about Meta Spatial Editor scenes.
+  Meta Quest: what IWSDK 1.x loads through its manifest (Draco and KTX2 yes,
+  Meshopt no), loading Meshopt or standalone KTX2 with your own loader and
+  local decoders, FBX/OBJ conversion in Blender, IWSDK-safe gltf-transform
+  flags (`--compress draco`, `--texture-compress ktx2`) and scripting traps,
+  a bundled checker script, sourcing and licensing assets (metavr asset
+  search, @iwsdk/example-assets, Kenney, Quaternius), and registering them in
+  `src/assets.ts` with the right load priority. Use when the user says "add
+  this model", "import FBX", "optimize GLB", "compress textures", "KTX2",
+  "Draco", "meshopt", "model won't load", "setMeshoptDecoder must be called",
+  "load assets offline", "model renders black after merging materials", "slow
+  to load", "asset too big", or asks about Meta Spatial Editor scenes.
 ---
 
 # IWSDK asset pipeline

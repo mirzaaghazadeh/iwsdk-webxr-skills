@@ -3,14 +3,14 @@
 Guidance for AI coding agents (Claude Code, Codex, Cursor, Copilot and others) working with this
 repository. People should start at [README.md](README.md).
 
-This repo is a **skill library**: 56 Agent Skills and one subagent for building WebXR games and
+This repo is a **skill library**: 57 Agent Skills and one subagent for building WebXR games and
 apps with Meta's Immersive Web SDK (IWSDK), testing them on Meta Quest and shipping them on the
 Meta Horizon Store as PWAs. It holds no app code.
 
 ## Layout
 
 ```
-skills/custom/<skill>/             11  Original skills by Navid Mirzaaghazadeh (MIT)
+skills/custom/<skill>/             12  Original skills by Navid Mirzaaghazadeh (MIT)
 skills/iwsdk-official/<skill>/     13  IWSDK team's skills, copied unchanged (MIT) + ERRATA.md
 skills/iwsdk-official/agents/       1  iwsdk-project-code-reviewer subagent (plugin loads it here)
 skills/meta-official/<skill>/      10  Meta's skills, copied unchanged (Apache-2.0) + ERRATA.md
@@ -29,7 +29,9 @@ Every folder name equals its skill's `name:`. Every third-party folder has a `SO
    in the project.
 2. **Check for a scaffolded project first.** If the project has `.claude/skills/iwsdk-dev/` (made
    by `npm create @iwsdk`), it already has the `iwsdk-official` skills and agent: don't install
-   that bundle. Also check for Meta's `meta-vr` plugin, which duplicates the Meta skills.
+   that bundle. Also check for Meta's `meta-vr` plugin and for Meta skills installed by
+   `metavr init` / `metavr skills install` (run `metavr skills status`; they live in
+   `~/.agents/skills`), which duplicate the Meta skills.
 3. **Pick one method.** As Claude Code:
    `claude plugin install iwsdk-core --marketplace mirzaaghazadeh/iwsdk-webxr-skills --scope project`.
    Otherwise `./install.sh --project <dir> <bundle>` from a clone, or `npx skills add` /

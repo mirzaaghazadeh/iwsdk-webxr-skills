@@ -263,3 +263,36 @@ sources: Unity edition `docs/research-meta.md` §4 (verified 2026-10-16).
 | Asset links hosting | developer.android.com/training/app-links/configure-assetlinks |
 | GitHub Pages tooling | github.com/actions/upload-pages-artifact (v3.0.1, v4.0.0, v5.0.0); github.com/tschaub/gh-pages |
 | WebXR spec | immersive-web.github.io/webxr/ |
+
+---
+
+## 11. Update 2026-10-17: store and AI tools after Meta Connect 2026
+
+Condensed references: [meta-reference/store-2026.md](meta-reference/store-2026.md),
+[meta-reference/ai-tools.md](meta-reference/ai-tools.md). The full platform write-up with the
+link-check table for both libraries is in the Unity library:
+`unity-meta-quest-skills/docs/research-connect-2026-platform.md`.
+
+- **URLs:** every `developers.meta.com/horizon/...` page now 302-redirects to `/vr/...`
+  (canonical). Markdown twins answer under both `/horizon/llmstxt/` and `/vr/llmstxt/`. The
+  `agent_guidance` header in the twins now says to ask before installing tools.
+- **Store delivery to Meta VR Glasses** (spring 2027): the build's Supported Devices must include
+  **Future devices**, or upload with `--channel "alpha:quest3+"` [target-builds-by-device
+  2026-09-04; app-compatibility 2026-10-13]. Bubblewrap emits neither `supportedDevices` nor
+  `defaultDeviceTargets`, so that is the only control. A TWA has no native code, so the 64-bit rule
+  is met.
+- **Input declaration:** the Bubblewrap Quest template always adds `oculus.software.handtracking
+  required="false"` + `HAND_TRACKING` (checked in `template_project/app/src/main/AndroidManifest.xml`
+  on `main`), which app-compatibility defines as "controllers and hands" support.
+- **No changes** to the VRC index (2026-08-19), the release-manifest rules (2026-10-15), the PWA
+  docs (2026-07-22 / 2026-09-23), web IAP (2026-10-14) or Bubblewrap (1.24.1 still `latest`;
+  `main` unchanged since 2026-09-16). The §7/§8 SDK-level question stays open.
+- **Correction to §2:** `@meta-quest/bubblewrap-cli` 1.24.1 was **published 2026-05-05**; 2026-08-14
+  is the registry entry's last-modified date.
+- **New for web listings:** TBYB is not available for 2D apps (2026-06-29); web achievements are
+  server-to-server only (web ps-achievements 2026-10-14), so an achievement-based TBYB for an
+  immersive PWA would need a server (unverified that TBYB works for PWAs). Price A/B testing is US
+  only (2025-10-01). Comfort ratings are verified on /vr/policy/app-policies/ §5.1 (2026-03-10).
+- **metavr:** npm 1.8.1 (2026-10-01) changed only the download wrapper; binary 1.8.0.17.10;
+  `docs/metavr-cli-reference.md` matches upstream `docs/metavr-cli.md` at `3a8553d`.
+- **Still 404:** `/documentation/web/ps-entitlement-check/` (re-checked 2026-10-17).

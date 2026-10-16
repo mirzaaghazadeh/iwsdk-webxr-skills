@@ -6,7 +6,7 @@ which is stored next to it, and those licenses take precedence for those files.
 
 ## Original work: MIT, © 2026 Navid Mirzaaghazadeh
 
-- `skills/custom/**`: all 11 original skills with their scripts and references. Each `SKILL.md`
+- `skills/custom/**`: all 12 original skills with their scripts and references. Each `SKILL.md`
   carries `license: MIT`, `metadata.author` and a "Made by" line.
 - `README.md`, `AGENTS.md`, `CLAUDE.md`, `CONTRIBUTING.md`, `THIRD_PARTY_NOTICES.md`, `install.sh`,
   `.claude-plugin/marketplace.json`, `mcp/**`

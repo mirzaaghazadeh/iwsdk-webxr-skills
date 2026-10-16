@@ -3,7 +3,7 @@
 Each entry: how to request it, what Meta documents, and caveats. "Unverified" means no Meta page
 confirms it; check with `metavr docs search "<feature> webxr"` and on a headset. Most per-feature
 pages under /documentation/web/ carry no `last_updated` date; the hub pages were rewritten
-2026-07-21/22. Fetched 2026-10-16.
+2026-07-21/22. Fetched 2026-10-16; Meta VR Glasses section added 2026-10-17.
 
 ## Session modes
 
@@ -106,9 +106,38 @@ pages under /documentation/web/ carry no `last_updated` date; the hub pages were
   append an `<input>` to the DOM and call `focus()`; read `value` (no key events); each show
   starts a new editing session and the first key press overwrites the value; remove the element
   after the session.
-- **2D pages**: no gaze hover; semantic `<button>` / `<a href>`; 48 × 48 CSS px targets [2d-web].
+- **2D pages**: no gaze hover (no `:hover`, no pointer events from looking; the system draws
+  hover); semantic `<button>` / `<a href>` or a focusable ARIA role, since a click-only `<div>`
+  may not be recognised; **56 × 56 CSS px** targets [eyes-best-practices 2026-10-13; 2d-web
+  2026-09-04 still says 48 × 48]. Keep essential actions available without hover; give menus
+  an explicit close button.
 
-## Not documented for Quest Browser (as of 2026-10-16)
+## Meta VR Glasses (added 2026-10-17)
 
-`dom-overlay`, `light-estimation`, `secondary-views`, raw camera access via `XRView.camera`, and
-eye tracking in WebXR: no Meta web page found. Unverified: detect at runtime and test.
+No page under /documentation/web/ mentions the device. What is known, and from where:
+
+- **Device** [compare-devices 2026-09-30, field-of-view 2026-09-25]: eyes + hands primary,
+  ships without controllers (Touch Plus sold separately); eye tracking; 70° × 66° nominal view
+  (perceived p90 58° × 54°; render extent 74° × 68°); micro-OLED 2412 × 2288 per eye; up to
+  120 Hz; XR2 Gen 3, 12 GB; colour passthrough with depth sensing; Android 14.
+- **Gaze in WebXR** [IWSDK 1.0.1 `init/xr.js` comment]: IWSDK requests `'gaze-tracking'`,
+  described as the name Quest Browser accepts and the one that surfaces a `targetRayMode ===
+  'gaze'` input source; it also offers `'eye-tracking'` (W3C draft name) as optional. An
+  unknown *required* descriptor fails the session, an unknown optional one is ignored.
+- **Fallback** [eyes-best-practices]: without eye tracking, targeting falls back to hand or
+  controller rays, and to head gaze only when neither is tracked.
+- **IWER `metaVRGlasses` profile** [iwer 2.6.0]: Quest 3 session modes and features, frame
+  rates `[72, 90, 96, 100, 120]`, the same Quest 3 user agent, plus a visibility mask of 37°
+  left/right, 25° up, 43° down per eye ("sampled from Meta VR Glasses XRView projection
+  matrices"). Emulator data: confirm on hardware.
+- **Controller-required immersive apps** show a **Switch to Controllers** dialog that blocks
+  entry until controllers are active [app-compatibility 2026-10-13]. Whether a WebXR session in
+  Browser or an immersive PWA triggers it: unverified.
+- **Everything else** (AR features, layers, multiview, keyboard, camera, UA token, window
+  sizes): unverified. Feature-detect and test once hardware ships (spring 2027).
+
+## Not documented for Quest Browser (as of 2026-10-17)
+
+`dom-overlay`, `light-estimation`, `secondary-views`, raw camera access via `XRView.camera`:
+no Meta web page found. Eye gaze appears only in IWSDK's source and docs (above), not on a
+Browser page. Unverified: detect at runtime and test.

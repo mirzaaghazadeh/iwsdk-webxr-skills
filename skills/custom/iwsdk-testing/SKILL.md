@@ -5,13 +5,14 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.2.0"
 description: >-
   Sets up repeatable automated tests for an IWSDK WebXR app: typecheck and
   build gates, asset checks, a headless smoke test that drives the IWER
   emulator through the `iwsdk` CLI (screenshot, console errors, entity and
   component checks, ECS pause/step/diff, entering XR), scripted interaction
-  tests with emulated controllers, a test-hook component for arranging
+  tests with emulated controllers, hands and Meta VR Glasses gaze + pinch,
+  a test-hook component for arranging
   scenarios, frame-stepped gameplay videos recorded in the emulator,
   scene-file validation, the opt-in Playwright runner, unit tests for pure
   game logic, and a GitHub Actions job. Use when the user says "add tests",
@@ -145,6 +146,22 @@ physics and timing, use the `iwsdk-debug` loop (`ecs pause`, `snapshot`, `step -
 Direct `ecs set-component` is fine to **arrange** a scenario, but it is not proof that the user's
 input path works.
 
+**Gaze + pinch (Meta VR Glasses).** Needs `world.xr.features.gazeTracking` and, for the
+emulated gaze source, `dev.emulator.device: "metaVRGlasses"` (setup: `iwsdk-vr-glasses`).
+Switch to hands, aim `gaze`, pinch with a hand, assert, then test the fallback:
+
+```bash
+cli xr set-input-mode --input-json '{"mode":"hand"}' >/dev/null
+cli xr look-at --input-json '{"device":"gaze","target":{"x":0,"y":1.5,"z":-2}}' >/dev/null
+cli xr select --input-json '{"device":"hand-right"}' >/dev/null      # the pinch; gaze itself has no select
+cli ecs query --input-json "{\"entityIndex\":$idx}" | jq -e '.data.result.components[] | select(.componentId | contains("GameState"))'
+cli xr set-connected --input-json '{"device":"gaze","connected":false}' >/dev/null   # hand rays must take over
+```
+
+Gaze is pose-only: `look-at`, `set-transform` (orientation only) and `animate-to` aim it; move
+its origin by moving `headset`. It isn't accepted by the select or gamepad commands. For a
+hold-move-release grab use `xr set-select-value` on the hand (IWSDK gaze docs).
+
 **CLI gotchas** (1.0.1):
 
 - `xr look-at` needs `target` as an object, `{"x":0,"y":1.5,"z":-2}`. An array doesn't move
@@ -216,5 +233,6 @@ commands with a `runtimeTarget`). Manual checklist: **`iwsdk-quest-device-testin
 - https://iwsdk.dev/skill.md (device names, gamepad indices, verification workflow)
 - `npx @iwsdk/cli ecs step --help` (1.0.1: `count` 1-120, fixed `delta`, requires `ecs pause`)
 - Test-hook component, CLI timing, `xr look-at` target shape, frame-stepped recording and the Vitest controller: an IWSDK 1.0.1 VR prototype, 2026-10-16/17
+- Gaze automation: IWSDK 1.0.1 `docs/concepts/xr-input/gaze.md` ("Drive tests from the CLI"), https://developers.meta.com/horizon/documentation/iwsdk/guides/02-testing-experience/ ("Automate gaze and pinch", 2026-09-04)
 
 Last verified: 2026-10-17

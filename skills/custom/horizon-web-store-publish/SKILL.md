@@ -5,20 +5,21 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   End-to-end release pipeline for shipping an IWSDK / WebXR game (or a 2D web
   app) on the Meta Horizon Store as a PWA/TWA: production build, HTTPS hosting
   that can serve /.well-known/assetlinks.json, web app manifest and icons,
   @meta-quest/bubblewrap-cli in immersive or 2D mode (scripted, non-TTY),
   version codes, signed-APK verification, sideload test, ovr-platform-util or
-  metavr upload to ALPHA, promotion between release channels, web-only updates
+  metavr upload to ALPHA, device targeting (Future devices for Meta VR Glasses,
+  quest3+ channel suffix), promotion between release channels, web-only updates
   versus APK rebuilds, and CI. Ships a deploy checker, a TWA APK verifier and a
   guarded upload wrapper. Use when the user says "publish my WebXR app to the
   Quest store", "package my IWSDK game as a PWA", "bubblewrap for Quest", "my
   TWA won't launch / shows a URL bar", "assetlinks", "upload my web app APK",
-  "promote to beta / production", or "set up CI for my Quest PWA". Builds on
-  Meta's hz-store-pwa skill and corrects it where live docs moved on.
+  "ship my PWA to Meta VR Glasses", "promote to beta / production", or "set up
+  CI for my Quest PWA". Builds on and corrects Meta's hz-store-pwa skill.
 ---
 
 # Ship an IWSDK / WebXR app to the Meta Horizon Store
@@ -29,8 +30,9 @@ Meta's `hz-store-pwa` skill and IWSDK's upstream `iwsdk-hosting` and `iwsdk-pwa-
 skills (in `skills/iwsdk-official/`, with `ERRATA.md`) are the base walkthroughs (Vercel,
 manifest, Bubblewrap, upload). Read one first. This skill adds what it lacks: checks before each irreversible step, hosting traps
 that break Digital Asset Links, the Bubblewrap fields agents must set by hand, version-code
-control, channel promotion, and CI. Meta rewrote its PWA docs on 2026-07-22 and verified them
-with `@meta-quest/bubblewrap-cli` **1.24.1** (still npm `latest` on 2026-10-16).
+control, device targeting, channel promotion, and CI. Meta rewrote its PWA docs on 2026-07-22
+and verified them with `@meta-quest/bubblewrap-cli` **1.24.1** (still npm `latest` on 2026-10-17;
+Bubblewrap `main` unchanged since 2026-09-16).
 
 Detail lives in references: [twa-manifest.md](references/twa-manifest.md) (every field, what the
 Quest template emits), [hosting.md](references/hosting.md) (Vercel, GitHub Pages, custom
@@ -58,6 +60,7 @@ domains, headers), [ci.md](references/ci.md) (GitHub Actions).
 | Signing key | "Every future update must use the same signing certificate." Back up keystore, alias and passwords in two places | pwa-packaging |
 | Origin (scheme + host) | The TWA trusts exactly this host and checks `/.well-known/assetlinks.json` on it. Apex vs `www` matters | pwa-packaging; configure-assetlinks |
 | Age group | Goes into every `ovr-platform-util` upload; Mixed Ages WebXR PWAs must call `getUserAccountAgeCategory()` on every launch | ps-iap; age-groups |
+| Hand support | Bubblewrap's Quest template always declares `oculus.software.handtracking required="false"` + `HAND_TRACKING`, which Meta defines as "controllers and hands". Make hands-only play work from launch (Tracking.2). Whether the Store's hands-first ranking for Meta VR Glasses reads this declaration is undocumented (unverified) | app-compatibility (2026-10-13); Bubblewrap `template_project` |
 
 Plan the launch with `horizon-launch-roadmap`. Create the app in the Developer Dashboard first
 (Create a New App, platform Meta Horizon Store) to get the App ID; you need it for IAP and upload.
@@ -183,7 +186,7 @@ Bubblewrap template: minSdk 23 (page: 29-34), targetSdk 32 (page: 34 for apps cr
 `installLocation`, no `excludeFromRecents`. Meta's PWA docs don't mention any of these. Treat the
 ALPHA upload's **Manage Builds > Test Status** as the authority (Packaging.1/3/4 run at upload).
 If it rejects one, report it to the user with the exact message; don't patch the generated
-project.
+project. It also prints the declared input (Bubblewrap: controllers and hands) as INFO.
 
 ## 6. Sideload and test on a headset
 
@@ -215,14 +218,38 @@ RELEASE_NOTES="..." scripts/upload-pwa-build.sh app-release-signed.apk alpha
 ```
 
 That runs `ovr-platform-util upload-quest-build --app-id --apk --channel --age-group
-(--token|--app-secret)`. Without `--age-group` the upload lands as a draft. Alternative:
+(--token|--app-secret)`. Without `--age-group` the upload lands as a draft. Add
+`QUEST_DEVICE_TARGETS=quest3+` to send `--channel "alpha:quest3+"` (section 7a). Alternative:
 `metavr store dist upload --app-id <ID> --channel ALPHA --apk <apk> --notes "..."` (draft unless
-`--publish`; channels ALPHA/BETA/RC/LIVE). If any `metavr store dist` call errors, use the
-Dashboard instead of retrying (`hz-store-submit`).
+`--publish`; channels ALPHA/BETA/RC/LIVE; no age-group or device-target option). If any
+`metavr store dist` call errors, use the Dashboard instead of retrying (`hz-store-submit`).
 
 Then: read Test Status; invite testers (Distribution > Release Channels; 200 users by default,
 up to 2,500 on request; channels start with no users, not even you). Builds appear in the tester's
 Library and **My Preview Apps**.
+
+## 7a. Device targeting and Meta VR Glasses
+
+Meta VR Glasses (spring 2027) run the same Horizon OS, Store and Browser as Quest, so a Store
+PWA can reach them without a new package (app-compatibility, 2026-10-13;
+target-builds-by-device, 2026-09-04):
+
+- In the Dashboard, the build's **Supported Devices** must include **Future devices** plus each
+  Quest you support. That marks it forward-compatible; after VR Glasses ship, an approved
+  Production build with Future devices is delivered there with no new APK. A build with no
+  targeting ("All Devices") already includes them.
+- At upload: `QUEST_DEVICE_TARGETS="quest3+" scripts/upload-pwa-build.sh app.apk alpha` sends
+  `--channel "alpha:quest3+"` (`quest3+` = Quest 3 family, VR Glasses, future devices; other
+  specifiers: `quest2only`, `questproonly`, `quest3only`, `quest2+`, `questpro+`, `questpro-`).
+  Bubblewrap writes no `com.meta.store.defaultDeviceTargets` or `com.oculus.supportedDevices`, so
+  this suffix or the Dashboard is the only control. Meta's pages disagree on whether `vrglasses`
+  is a valid `supportedDevices` value; don't patch the generated manifest for it.
+- Rules: LIVE must always keep a forward-compatible build, every build in a submission must be
+  forward-compatible, and removing a device from a live build rolls that device back (ask first).
+- Before marking Future devices: hands-only play works, key UI fits 70° × 66° (IWER's VR Glasses
+  profile or `metavr device fov-sim enable` on a Quest 3/3S/Pro), nothing depends on hover, and
+  the VRC audit passes (there is no VR Glasses-specific VRC). Gaze-and-pinch in IWSDK:
+  `iwsdk-vr-glasses`. Details: `docs/meta-reference/store-2026.md`.
 
 ## 8. Promote and release
 
@@ -265,23 +292,27 @@ Keep a staging origin for testing and promote web builds to production the same 
 
 ## Sources
 
-- https://developers.meta.com/horizon/documentation/web/pwa-overview/ (2026-07-22)
-- https://developers.meta.com/horizon/documentation/web/pwa-overview-gs/ (2026-09-23)
-- https://developers.meta.com/horizon/documentation/web/pwa-packaging/ (2026-07-22)
-- https://developers.meta.com/horizon/documentation/web/pwa-webxr/ (2026-07-22)
-- https://developers.meta.com/horizon/documentation/web/pwa-2d-support/ (2026-07-22)
-- https://developers.meta.com/horizon/documentation/web/ps-iap/ (2026-10-14)
-- https://developers.meta.com/horizon/documentation/web/web-hosting/ (2026-09-23)
-- https://developers.meta.com/horizon/documentation/iwsdk/guides/08-build-deploy/ (2026-09-23)
-- https://developers.meta.com/horizon/resources/publish-mobile-manifest/ (2026-10-15)
-- https://developers.meta.com/horizon/resources/publish-release-channels/ (2026-03-23)
-- https://developers.meta.com/horizon/resources/publish-reference-platform-command-line-utility/ (2026-07-20)
-- https://developers.meta.com/horizon/resources/publish-create-app/ (2026-08-27)
-- https://developers.meta.com/horizon/resources/vrc-quest-packaging-1/ ... -6/, /vrc-quest-security-2/ (2026-03-30)
+Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
+
+- https://developers.meta.com/vr/documentation/web/pwa-overview/ (2026-07-22)
+- https://developers.meta.com/vr/documentation/web/pwa-overview-gs/ (2026-09-23)
+- https://developers.meta.com/vr/documentation/web/pwa-packaging/ (2026-07-22)
+- https://developers.meta.com/vr/documentation/web/pwa-webxr/ (2026-07-22)
+- https://developers.meta.com/vr/documentation/web/pwa-2d-support/ (2026-07-22)
+- https://developers.meta.com/vr/documentation/web/ps-iap/ (2026-10-14)
+- https://developers.meta.com/vr/documentation/web/web-hosting/ (2026-09-23)
+- https://developers.meta.com/vr/documentation/iwsdk/guides/08-build-deploy/ (2026-09-23)
+- https://developers.meta.com/vr/resources/publish-mobile-manifest/ (2026-10-15)
+- https://developers.meta.com/vr/resources/publish-release-channels/ (2026-03-23)
+- https://developers.meta.com/vr/resources/publish-release-channels-device-targeting/ (2026-09-04)
+- https://developers.meta.com/vr/essentials/app-compatibility/ (2026-10-13), /compatibility-mode/ (2026-09-04)
+- https://developers.meta.com/vr/resources/publish-reference-platform-command-line-utility/ (2026-07-20)
+- https://developers.meta.com/vr/resources/publish-create-app/ (2026-08-27)
+- https://developers.meta.com/vr/resources/vrc-quest-packaging-1/ (and -2/ to -6/), /vrc-quest-security-2/ (2026-03-30)
 - https://github.com/meta-quest/bubblewrap (main @ 2026-09-16; `packages/core/src/lib/TwaManifest.ts`, `util.ts`, `features/`, `template_project/`; `packages/cli/src/lib/cmds/{init,build,update,shared}.ts`)
-- https://www.npmjs.com/package/@meta-quest/bubblewrap-cli (1.24.1)
+- https://www.npmjs.com/package/@meta-quest/bubblewrap-cli (1.24.1, published 2026-05-05; still `latest` on 2026-10-17)
 - https://github.com/facebook/immersive-web-sdk `packages/core/src/ecs/world.ts` (`World.launchXR(xrOptions?)`, main, IWSDK 1.0.1)
 - https://developer.android.com/training/app-links/configure-assetlinks
 - https://github.com/actions/upload-pages-artifact (v3.0.1, v4.0.0, v5.0.0 action.yml); https://github.com/tschaub/gh-pages (`--dotfiles`, `--nojekyll`)
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17

@@ -1,10 +1,11 @@
 # twa-manifest.json for Meta Quest: fields, defaults, generated output
 
 Read from the source of `meta-quest/bubblewrap` (`main` at commit 2026-09-16, "Default TWA
-manifest fields the Gradle template renders unquoted"). npm `@meta-quest/bubblewrap-cli` 1.24.1
-was published 2026-08-14, so a few defaults may differ slightly in the release you run. Check
-with `bubblewrap --version`. The canonical schema is
-`bubblewrap/packages/core/src/lib/TwaManifest.ts`.
+manifest fields the Gradle template renders unquoted"; still the latest commit on 2026-10-17).
+npm `@meta-quest/bubblewrap-cli` 1.24.1 was published 2026-05-05 (registry entry last modified
+2026-08-14; an earlier version of this note said "published 2026-08-14"), so a few defaults may
+differ slightly in the release you run. Check with `bubblewrap --version`. The canonical schema
+is `bubblewrap/packages/core/src/lib/TwaManifest.ts`.
 
 ## Template for an immersive IWSDK game (agent / non-TTY path)
 
@@ -94,8 +95,13 @@ From `packages/core/template_project/app/build.gradle` and `src/main/AndroidMani
 - Meta-data `horizonos.pwa.APP_MODE` = `@string/horizonOSAppMode`. 2D also sets
   `com.oculus.vrshell.uses_secure_layer=secure`. Immersive sets
   `com.oculus.ossplash.background=passthrough-contextual` ("seamless AR to AR transitions").
-- No `com.oculus.supportedDevices`, no `android:installLocation`, no `excludeFromRecents` on the
-  launch activity; release build type has `minifyEnabled true`; no native code.
+- No `com.oculus.supportedDevices`, no `com.meta.store.defaultDeviceTargets`, no
+  `android:installLocation`, no `excludeFromRecents` on the launch activity; release build type
+  has `minifyEnabled true`; no native code (so the 64-bit rule for Meta VR Glasses is met).
+- The `oculus.software.handtracking required="false"` + `HAND_TRACKING` pair is what Meta's
+  app-compatibility page (2026-10-13) calls "controllers and hands" support. Every Quest TWA
+  declares it, in both modes. Device targeting is set at upload (`--channel "alpha:quest3+"`) or
+  in the Dashboard (Supported Devices, incl. Future devices); see SKILL.md section 7a.
 
 ## SDK-level note (unresolved)
 
@@ -103,7 +109,8 @@ Meta's release-manifest page (2026-10-15) asks for minSdk 29-34 and says apps cr
 2026-03-01 must set targetSdk 34; immersive apps need `headtracking required="true"`. Meta's own
 Bubblewrap emits 23 / 32 / `required="false"`, and Meta's PWA docs (2026-07-22) are silent on
 SDK levels. Nothing on developers.meta.com says whether the upload checks exempt TWAs.
-**Unverified: confirm at https://developers.meta.com/horizon/resources/publish-mobile-manifest/
+Still unresolved on 2026-10-17 (no Bubblewrap release and no page change since).
+**Unverified: confirm at https://developers.meta.com/vr/resources/publish-mobile-manifest/
 and with the first ALPHA upload's Test Status.** Don't edit `app/build.gradle` by hand to work
 around it: `bubblewrap update` overwrites it. If the upload is rejected, report the exact message
 and check https://github.com/meta-quest/bubblewrap for a newer release.

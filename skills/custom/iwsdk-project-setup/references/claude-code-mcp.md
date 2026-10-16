@@ -61,15 +61,24 @@ it. So:
 3. Your own desktop browser or headset keeps its own XR session; the agent drives the managed
    browser only, unless you pair a headset (`iwsdk-native-xr-test`).
 
-Tool groups (full list: https://iwsdk.dev/ai/mcp-tools.html, schemas: `npx @iwsdk/cli mcp inspect`):
+Tool groups: `iwsdk mcp stdio` in 1.0.1 lists **55** tools (counted from `RUNTIME_MCP_TOOLS`
+and the `tools/list` handler in `@iwsdk/cli` 1.0.1 `dist/cli.js`; unchanged in 1.1.0-rc.1).
+Meta's hosted MCP page and AI tools page say 45 (they describe IWSDK 0.5.3) and the IWSDK
+product page says 32; iwsdk.dev's page omits the runtime-scene and `runtime_*` groups. Always
+read `npx @iwsdk/cli mcp inspect` for the installed set.
 
 | Group | Tools |
 |---|---|
 | Browser (6) | `browser_screenshot`, `browser_snapshot`, `browser_interact`, `browser_profile`, `browser_get_console_logs`, `browser_reload_page` |
-| WebXR | `xr_get_session_status`, `xr_accept_session`, `xr_end_session`, `xr_get/set_transform`, `xr_look_at`, `xr_animate_to`, `xr_set_input_mode`, `xr_set_connected`, `xr_get/set_select_value`, `xr_select`, `xr_get/set_gamepad_state`, `xr_get/set_device_state` |
-| ECS | `ecs_pause`, `ecs_resume`, `ecs_step`, `ecs_query_entity`, `ecs_find_entities`, `ecs_list_systems`, `ecs_list_components`, `ecs_toggle_system`, `ecs_set_component`, `ecs_snapshot`, `ecs_diff` |
-| Scene / editor | `scene_open`, `scene_render_file`, `scene_flatten_file`, `scene_get_state`, `scene_get_capabilities`, `scene_screenshot`, `scene_select`, `scene_set_camera`, `scene_set_preview_visibility`, `scene_measure_image_regions` |
-| Assets / UI | `asset_render_preview`, `ui_list_assets`, `ui_render_preview`, `ui_inspect` |
+| WebXR (16) | `xr_get_session_status`, `xr_accept_session`, `xr_end_session`, `xr_get/set_transform`, `xr_look_at`, `xr_animate_to`, `xr_set_input_mode`, `xr_set_connected`, `xr_get/set_select_value`, `xr_select`, `xr_get/set_gamepad_state`, `xr_get/set_device_state`. Devices include `gaze` (VR Glasses profile): aim it with `look_at`/`set_transform`/`animate_to`; it takes no select or gamepad calls, pinch through `hand-left`/`hand-right` |
+| ECS (11) | `ecs_pause`, `ecs_resume`, `ecs_step`, `ecs_query_entity`, `ecs_find_entities`, `ecs_list_systems`, `ecs_list_components`, `ecs_toggle_system`, `ecs_set_component`, `ecs_snapshot`, `ecs_diff` |
+| Scene file / editor (10) | `scene_open`, `scene_render_file`, `scene_flatten_file`, `scene_get_state`, `scene_get_capabilities`, `scene_screenshot`, `scene_select`, `scene_set_camera`, `scene_set_preview_visibility`, `scene_measure_image_regions` (needs a `captureToken` no public tool issues) |
+| Runtime scene (3) | `scene_get_render_stats` (calls, triangles, textures, programs, mesh/material counts, shadow casters, bounds), `scene_get_runtime_hierarchy`, `scene_get_object_transform` (live app, not the editor document) |
+| Assets / UI (4) | `asset_render_preview`, `ui_list_assets`, `ui_render_preview`, `ui_inspect` |
+| Runtime control (5) | `runtime_get_status`, `runtime_list_targets`, `runtime_wait`, `runtime_recover`, `runtime_pair_headset` (pair a Quest by adb serial; `iwsdk-native-xr-test`) |
+
+Every app tool also takes an optional `expectedTab` (fail instead of acting on a reloaded tab)
+and `runtimeTarget` (managed browser by default, or a paired physical headset).
 
 `browser_profile` results are labelled `host-browser-diagnostic`, `calibrated: false`: they are
 desktop numbers, never headset performance.

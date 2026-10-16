@@ -1,7 +1,8 @@
 # All active VRCs, mapped to WebXR and 2D PWAs
 
 Columns **S** (Meta Horizon Store: immersive WebXR PWA) and **2D** (Meta Horizon Store (2D):
-2D PWA) are copied from Meta's VRC index (updated 2026-08-19): ✓ required, + recommended,
+2D PWA) are copied from Meta's VRC index (updated 2026-08-19, unchanged on 2026-10-17, no
+VR Glasses-specific VRC): ✓ required, + recommended,
 - not applicable (the index shows N/A or a blank cell). The requirement text is shortened from
 Meta's; the **web check** and **test** columns are this library's mapping to WebXR, Bubblewrap and
 Quest Browser, not Meta's wording. Retired and omitted: Performance.2, Functional.8,

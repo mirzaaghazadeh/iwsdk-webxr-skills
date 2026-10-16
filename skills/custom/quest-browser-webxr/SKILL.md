@@ -5,20 +5,21 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   What Meta Quest Browser supports for WebXR and how to use it: a sourced
-  feature matrix (immersive-vr, immersive-ar passthrough, hand-tracking,
-  hit-test, anchors and persistent anchors, plane and mesh detection, depth
-  sensing, layers and media layers, fixed foveation, framebuffer scale, frame
-  rate control, multiview, Space Warp, system keyboard, Touch Pro controllers),
-  session init options, focus and visibility handling, testing on a headset
-  (adb reverse, chrome://inspect, MQDH, IWER / Immersive Web Emulator, OVR
-  Metrics, ovrgpuprofiler, RenderDoc) and performance budgets and knobs for
-  Quest 2/3/3S. Use when the user asks "does Quest Browser support X", "how do
-  I request passthrough / hand tracking / plane detection", "set 90 Hz in
-  WebXR", "enable foveation", "my WebXR app stutters on Quest", "debug WebXR on
-  the headset", "Enter VR button missing on Quest", or before choosing WebXR
+  feature matrix with a Meta VR Glasses column (immersive-vr, immersive-ar
+  passthrough, hand-tracking, gaze-tracking, hit-test, anchors, plane and
+  mesh detection, depth sensing, layers, fixed foveation, framebuffer scale,
+  frame rate control, multiview, Space Warp, system keyboard, Touch Pro),
+  session init options, focus and visibility handling, gaze rules for 2D
+  pages, headset testing (adb reverse, chrome://inspect, MQDH, IWER, OVR
+  Metrics, ovrgpuprofiler, RenderDoc, metavr fov-sim) and performance budgets
+  for Quest 2/3/3S and VR Glasses. Use when the user asks "does Quest Browser
+  support X", "does it work on Meta VR Glasses", "how do I request
+  passthrough / hand tracking / plane detection / eye gaze", "set 90 Hz in
+  WebXR", "enable foveation", "my WebXR app stutters on Quest", "debug WebXR
+  on the headset", "Enter VR button missing", or before choosing WebXR
   features for an IWSDK app.
 ---
 
@@ -35,43 +36,54 @@ packaging `horizon-web-store-publish`. Per-feature detail and caveats:
 [references/performance.md](references/performance.md).
 
 Meta's per-feature WebXR pages are mostly **undated and older** than its 2026-07 web-docs
-rewrite (the mixed reality page still names only Quest 2 and Quest Pro). Treat device lists as
-lower bounds, detect features at runtime, and confirm anything critical with
-`metavr docs search "<feature> webxr"` and a headset test.
+rewrite (the mixed reality page still names only Quest 2 and Quest Pro), and **none mentions
+Meta VR Glasses** (checked 2026-10-17). Treat device lists as lower bounds, detect features at
+runtime, and confirm anything critical with `metavr docs search "<feature> webxr"` and a
+headset test. Building for VR Glasses (gaze + pinch, no controllers, 70° × 66° view): load
+**`iwsdk-vr-glasses`**; device facts with sources: `docs/meta-reference/web-vr-glasses.md`.
 
 ## Know the browser
 
 - Chromium-based. Since March 2026 Browser versions follow Chromium milestones: 144 (2026-03-02),
   146.0 (2026-04-21, Chromium 146), 149.1, 150.1, **152.1 (2026-10-02)** (Browser release notes).
   Before that: 42.x (Feb 2026).
-- User agent tokens: `Quest 2`, `Quest Pro`, `Quest 3`; **Quest 3S reports `Quest 3`**. Meta says
-  use feature detection, not the UA (browser-specs, 2026-07-21).
+- User agent tokens: `Quest 2`, `Quest Pro`, `Quest 3`; **Quest 3S reports `Quest 3`**; no
+  token is documented for VR Glasses. Meta says use feature detection, not the UA
+  (browser-specs, 2026-07-21).
 - 2D windows: default 1280 × 670, min 500 × 495, max 2000 × 1070 CSS px; desktop browsing mode
-  by default (viewport meta ignored). No gaze hover events; targets 48 × 48 CSS px or larger
-  (2d-web, 2026-09-04).
+  by default (viewport meta ignored) (browser-specs). Window sizes on VR Glasses: unverified.
+- Gaze in 2D pages: looking fires no `:hover` or pointer events (the system draws hover), so no
+  flow may depend on hover; use `<button>` / `<a href>` or focusable ARIA roles (a click-only
+  `<div>` may not be targetable). Targets **56 × 56 CSS px** or larger (eyes-best-practices,
+  2026-10-13; the older 2d-web page, 2026-09-04, still says 48 × 48).
 - WebXR needs a secure context: HTTPS, or `localhost` through `adb reverse`.
 
 ## Feature matrix (summary)
 
-| Feature | Request it with | Status on Quest Browser | Meta source |
-|---|---|---|---|
-| VR session | `requestSession('immersive-vr')` | Supported | webxr-overview |
-| Passthrough AR | `'immersive-ar'`; clear to transparent | Supported (page: Quest 2 grey, Pro colour; Quest 3/3S not listed but IWSDK MR targets them) | webxr-mixed-reality |
-| Hand tracking | optional feature `'hand-tracking'` | Supported; palm pinch reserved for the system | webxr-hands |
-| Hit test | `'hit-test'` | Supported; no room scan needed | IWSDK ch. 14 |
-| Anchors, persistent | `'anchors'`; `requestPersistentHandle()` / `restorePersistentAnchor()` | Supported; 8 persistent per site; none in private mode | webxr-mixed-reality |
-| Plane detection | `'plane-detection'`; `frame.detectedPlanes` | Supported; needs Space Setup; `initiateRoomCapture()` once per session | webxr-mixed-reality |
-| Mesh detection | `'mesh-detection'` | Used by IWSDK scene understanding; device support **unverified** | IWSDK ch. 11 |
-| Depth sensing | `'depth-sensing'` + usage/format preferences | Used by IWSDK depth occlusion; Browser 146.0 added experimental depth projection; device list **unverified** | IWSDK ch. 15; release notes |
-| Layers | `'layers'`; `XRWebGLBinding`, `XRMediaBinding` | Supported (quad, cylinder, equirect, cube, projection, media) | webxr-layers |
-| Fixed foveation | `'low'/'medium'/'high-fixed-foveation-level'` or `XRWebGLLayer.fixedFoveation` 0-1 | Supported | webxr-ffr |
-| Frame rate | `session.supportedFrameRates`, `updateTargetFrameRate()` | Browser 16.4+ | webxr-frames |
-| Multiview | WebGL2 `OCULUS_multiview` (`OVR_multiview2` behind a flag) | Supported, "experimental" label | web-multiview |
-| Space Warp | `'layers'` + `'space-warp'` | Draft spec; Browser 24.2+ and **`chrome://flags` only**: not usable for Store users | webxr-space-warp |
-| System keyboard | focus an HTML `<input>`; `session.isSystemKeyboardSupported` | Browser 26.1+ | webxr-keyboard |
-| Touch Pro controllers | profile `meta-quest-touch-pro` (fallback `oculus-touch-v2`) | 12 gamepad buttons incl. stylus, finger curl | webxr-pro-controller |
-| Camera access | MediaDevices (`getUserMedia`) | IWSDK `CameraSource`; which cameras Browser exposes is **unverified** | IWSDK ch. 13 |
-| DOM overlay, WebGPU XR | n/a | Not documented by Meta for Quest WebXR; release notes list experimental WebGPU layers, foveation and Space Warp layers (149.1-152.1) | release notes |
+"Glasses" = Meta VR Glasses. No Meta web page covers the device yet, so that column is device
+specs plus IWSDK's guidance; "unverified" there means "detect at runtime and test when the
+hardware ships (spring 2027)".
+
+| Feature | Request it with | Status on Quest Browser | Glasses | Meta source |
+|---|---|---|---|---|
+| VR session | `requestSession('immersive-vr')` | Supported | Meta's IWSDK glasses guide uses VR mode | webxr-overview; IWSDK get-started-glasses |
+| Passthrough AR | `'immersive-ar'`; clear to transparent | Supported (page: Quest 2 grey, Pro colour; Quest 3/3S not listed but IWSDK MR targets them) | Device has colour stereo passthrough with depth; WebXR AR unverified | webxr-mixed-reality; compare-devices |
+| Hand tracking | optional feature `'hand-tracking'` | Supported; palm pinch reserved for the system | **Primary input**: pinch selects | webxr-hands; bring-your-app-glasses |
+| Eye gaze | optional `'gaze-tracking'` (IWSDK also offers the W3C draft `'eye-tracking'`) → an `XRInputSource` with `targetRayMode === 'gaze'` | No eye tracking on Quest 3/3S (Quest Pro has the hardware; Browser support unverified) | **Primary targeting**; IWSDK 1.0+ `gazeTracking` | IWSDK 1.0.1 `init/xr.js`; horizon-os-input |
+| Hit test | `'hit-test'` | Supported; no room scan needed | Unverified | IWSDK ch. 14 |
+| Anchors, persistent | `'anchors'`; `requestPersistentHandle()` / `restorePersistentAnchor()` | Supported; 8 persistent per site; none in private mode | Unverified | webxr-mixed-reality |
+| Plane detection | `'plane-detection'`; `frame.detectedPlanes` | Supported; needs Space Setup; `initiateRoomCapture()` once per session | Unverified | webxr-mixed-reality |
+| Mesh detection | `'mesh-detection'` | Used by IWSDK scene understanding; device support **unverified** | Unverified | IWSDK ch. 11 |
+| Depth sensing | `'depth-sensing'` + usage/format preferences | Used by IWSDK depth occlusion; Browser 146.0 added experimental depth projection; device list **unverified** | Device has depth sensing; WebXR unverified | IWSDK ch. 15; release notes; compare-devices |
+| Layers | `'layers'`; `XRWebGLBinding`, `XRMediaBinding` | Supported (quad, cylinder, equirect, cube, projection, media) | Unverified; `metavr device fov-sim` clips layers only on Horizon OS v209+ | webxr-layers; field-of-view |
+| Fixed foveation | `'low'/'medium'/'high-fixed-foveation-level'` or `XRWebGLLayer.fixedFoveation` 0-1 | Supported | Device supports FFR and ETFR natively; no public ETFR route for web | webxr-ffr; fixed-foveated-rendering |
+| Frame rate | `session.supportedFrameRates`, `updateTargetFrameRate()` | Browser 16.4+ | Display up to 120 Hz; IWER's profile lists 72/90/96/100/120 (emulator data) | webxr-frames; compare-devices |
+| Multiview | WebGL2 `OCULUS_multiview` (`OVR_multiview2` behind a flag) | Supported, "experimental" label | Unverified | web-multiview |
+| Space Warp | `'layers'` + `'space-warp'` | Draft spec; Browser 24.2+ and **`chrome://flags` only**: not usable for Store users | Same caveat | webxr-space-warp |
+| System keyboard | focus an HTML `<input>`; `session.isSystemKeyboardSupported` | Browser 26.1+ | Unverified | webxr-keyboard |
+| Touch Pro controllers | profile `meta-quest-touch-pro` (fallback `oculus-touch-v2`) | 12 gamepad buttons incl. stylus, finger curl | Touch Plus only, sold separately; don't assume controllers | webxr-pro-controller; compare-devices |
+| Camera access | MediaDevices (`getUserMedia`) | IWSDK `CameraSource`; which cameras Browser exposes is **unverified** | Unverified | IWSDK ch. 13 |
+| DOM overlay, WebGPU XR | n/a | Not documented by Meta for Quest WebXR; release notes list experimental WebGPU layers, foveation and Space Warp layers (149.1-152.1) | Same | release notes |
 
 ## Session setup (raw WebXR; IWSDK wraps this)
 
@@ -83,10 +95,18 @@ const session = await navigator.xr.requestSession(mode, {
   optionalFeatures: ['hand-tracking', 'layers', 'medium-fixed-foveation-level'],
   // AR extras: 'hit-test', 'anchors', 'plane-detection', 'mesh-detection',
   // 'depth-sensing' with depthSensing: { usagePreference: ['gpu-optimized'], dataFormatPreference: ['float32'] }
+  // Eye gaze (VR Glasses): 'gaze-tracking' and 'eye-tracking', always optional
 });
 ```
 
 - Put everything optional in `optionalFeatures`; a missing required feature rejects the session.
+- **Gaze without IWSDK:** after the session starts, look in `session.inputSources` (and
+  `inputsourceschange`) for a source with `targetRayMode === 'gaze'`, cast from its
+  `targetRaySpace`, and take selection from the hands' `select` events. That split (gaze aims,
+  pinch commits) is how IWSDK 1.0.1 and IWER model it; whether Browser's gaze source fires
+  `select` itself is unverified. Keep hand and controller rays working when no gaze source
+  appears (Quest 3/3S). Meta has no web guide that combines gaze and pinch outside IWSDK
+  (bring-your-app-glasses), so test on hardware.
 - `requestSession` needs a user activation in a tab. In an installed immersive PWA the icon tap
   counts, so call it on load there only (gate on `window.getDigitalGoodsService`; see
   `horizon-web-store-publish`).
@@ -142,6 +162,10 @@ metavr log --level E                                 # device log; hz-vr-debug h
 - No headset: IWER inside the IWSDK dev server, or the **Immersive Web Emulator** extension for
   Chrome/Edge; Spector.js works only on desktop (webxr-workflow). Emulators miss performance,
   comfort and some input; always finish on hardware.
+- VR Glasses before the hardware exists: IWER's `metaVRGlasses` profile (gaze + hands, view
+  mask; IWER 2.5.0+), and on a Quest 3/3S/Pro `metavr device fov-sim enable` (70° × 66°;
+  `--perceived` 58° × 54°; `disable` afterwards; ask first) (field-of-view, 2026-09-25).
+  Walkthrough: `iwsdk-vr-glasses` §7.
 - MQDH: ADB over Wi-Fi ("preferred" for Browser debugging), casting, screenshots, and Device
   Manager > Browser to send a URL (browser-mqdh).
 - Meta's samples: immersive-web.github.io/webxr-samples (bare API, layers, hands, AR); Meta's
@@ -175,15 +199,25 @@ renderer settings and feature-flag costs use `iwsdk-performance`):
 Space Warp needs a `chrome://flags` switch, so Store users won't have it; don't plan a game's
 budget around it.
 
+**Meta VR Glasses:** no WebXR or draw-call budget published. Device facts: up to 120 Hz;
+render scale 1.0 = 1728 × 1760 per eye (Quest 3: 1680 × 1760); steady-state CPU/GPU level 4,
+no GPU level 5; app memory limit 5.75 GiB PSS like Quest 3/3S; battery saver forces 72 Hz
+(render-scale 2026-09-01, cpu-gpu-levels 2026-09-11, memory-ram 2026-08-31,
+battery-saver-mode 2026-04-08). How Browser maps these to WebXR is unverified; start from the
+Quest 3 numbers and measure.
+
 ## Sources
 
 - https://developers.meta.com/horizon/documentation/web/ (2026-07-22), /webxr-overview/ (2026-07-21), /3d-web/ (2026-07-22), /2d-web/ (2026-09-04)
-- https://developers.meta.com/horizon/documentation/web/browser-specs/ (2026-07-21), /browser-remote-debugging/ (2026-07-22), /browser-mqdh/, /browser-release-notes/ (152.1, 2026-10-02)
+- https://developers.meta.com/horizon/documentation/web/browser-specs/ (2026-07-21), /browser-remote-debugging/ (2026-07-22), /browser-mqdh/; release notes now at https://developers.meta.com/vr/release-notes/?search_key=browser (152.1, 2026-10-02)
 - https://developers.meta.com/horizon/documentation/web/webxr-mixed-reality/, /webxr-hands/, /webxr-layers/, /webxr-ffr/, /webxr-frames/, /web-multiview/, /webxr-space-warp/, /webxr-keyboard/, /webxr-pro-controller/, /webxr-workflow/ (undated)
 - https://developers.meta.com/horizon/documentation/web/webxr-perf/ (2026-07-21), /webxr-perf-workflow/ (2026-07-21), /webxr-perf-bp/, /webxr-perf-tools/
 - https://developers.meta.com/horizon/documentation/iwsdk/guides/02-testing-experience/, /11-scene-understanding/, /13-camera-access/ (2026-09-04), /14-environment-raycast/ (2026-07-22), /15-depth-occlusion/ (2026-09-04)
 - https://developers.meta.com/horizon/resources/vrc-quest-performance-1/ (2025-10-22), /vrc-quest-performance-4/, /vrc-quest-input-4/ (2025-09-26), /vrc-quest-functional-2/
 - https://developers.meta.com/horizon/resources/device-optimization-comparison/ (2026-05-11)
 - https://immersive-web.github.io/webxr/ (XRVisibilityState, frameRate, updateTargetFrameRate)
+- https://developers.meta.com/horizon/essentials/compare-devices/ (2026-09-30), /field-of-view/ (2026-09-25), /bring-your-app-glasses/ (2026-10-13), /horizon-os-input/ (2026-09-10), /fixed-foveated-rendering/ (2026-09-14), /render-scale/ (2026-09-01), /cpu-gpu-levels/ (2026-09-11), /memory-ram/ (2026-08-31), /battery-saver-mode/ (2026-04-08)
+- https://developers.meta.com/horizon/design/eyes-best-practices/ (2026-10-13)
+- https://developers.meta.com/horizon/documentation/iwsdk/guides/get-started-glasses/ (2026-09-04); npm `@iwsdk/core` 1.0.1 `dist/init/xr.js`; npm `iwer` 2.6.0 `lib/device/configs/headset/meta.js`
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17

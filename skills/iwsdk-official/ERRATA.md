@@ -4,7 +4,8 @@ The skills in this folder are copied unchanged from
 [facebook/immersive-web-sdk](https://github.com/facebook/immersive-web-sdk) at commit
 `0778f518db51e9d1836977f3b6fed9b53f3f0c6f` (IWSDK 1.0.1). These are the places where they, or
 the scaffold files they rely on, disagree with the SDK source or docs at that commit. Checked
-2026-10-16; traps from an IWSDK 1.0.1 game prototype added 2026-10-17. When a skill and this
+2026-10-16; traps from an IWSDK 1.0.1 game prototype and the Meta-hosted docs section added
+2026-10-17. When a skill and this
 file disagree, trust this file and then the installed package
 (`node_modules/@iwsdk/*/dist/**/*.d.ts`, `npx @iwsdk/cli <domain> --help`).
 
@@ -36,6 +37,26 @@ file disagree, trust this file and then the installed package
 | `packages/create/README.md` "What You Get" | "GLTF Optimization – Automatic asset compression" | Removed in 0.5 (`@iwsdk/vite-plugin-gltf-optimizer` retired, see `iwsdk-migrate-0-5`). Guide 08: "Vite copies files from `public/` without rewriting them. Optimize large models and textures … before adding them." Use `../custom/iwsdk-asset-pipeline` |
 | https://iwsdk.dev/ai/getting-started.html | "Create runs this command automatically for tools selected during an installed scaffold" | There is no selection step; it runs `adapter sync` for every tool when dependencies are installed |
 | https://iwsdk.dev/ai/modes.html | With `--no-open`, "browser commands can launch it lazily" | The 1.0.1 `AGENTS.md` says a targetless managed-browser command then fails with `browser_not_launched`. Don't rely on lazy launch |
+
+## Meta's hosted IWSDK docs vs 1.0.1 (checked 2026-10-17)
+
+The pages under `developers.meta.com/vr/documentation/iwsdk/` (entry:
+https://developers.meta.com/vr/documentation/iwsdk/guides/overview/; the bare folder URL
+returns 404; dated 2026-09-04 to 2026-09-23) say they were verified against `8218285d` (**IWSDK 0.5.3**), but they already
+describe Meta VR Glasses. Where they disagree with the 1.0.1 package (npm tarballs read, not
+run) or with iwsdk.dev (identical to 1.0.1's `docs/public`):
+
+| Hosted page | Says | 1.0.1 actually |
+|---|---|---|
+| `guides/get-started-glasses/`, `guides/02-testing-experience/` | Set `world.features.fieldOfViewMask: true` for a Meta VR Glasses view mask, including on a real Quest | No such key in `@iwsdk/core` 1.0.1 or 1.1.0-rc.1 (`dist/project/types.d.ts`, schema, `validation.js`). Unknown keys are `unknown-key` issues and `assertValidIwsdkProjectManifest` throws, so the Vite plugin refuses the manifest. Desktop: `dev.emulator.device: "metaVRGlasses"`; headset: `metavr device fov-sim enable` |
+| `guides/06-built-in-interactions/` | Gaze tuning key `suppressWhenHandPointerActive` | `suppressWhenDirectPointerActive`; the hosted name fails validation the same way. The hosted table also omits `showDebugReticle` and `trackingLossGraceSeconds` |
+| `guides/06-built-in-interactions/`, `guides/get-started-glasses/` | Without a usable gaze pose IWSDK falls back to head pointing; amber reticle = head fallback | `docs/concepts/xr-input/gaze.md`: "IWSDK does not silently replace missing production gaze with head pose"; hand/controller far rays resume; head-directed gaze only through `dev.targetDevicePreview.gazeSimulation: "head"` or the emulator's Head mode; `showDebugReticle` defaults to `false` |
+| `ai/index/`, `ai/mcp-tools/` (and https://developers.meta.com/vr/discover/ai-tools/) | `iwsdk-runtime` exposes 45 public tools (browser 3, UI 2); the IWSDK product page says 32 | `@iwsdk/cli` 1.0.1 `tools/list` returns 55: adds `browser_snapshot`, `browser_interact`, `browser_profile`, `ui_inspect`, `asset_render_preview` and five `runtime_*` control tools |
+| `ai/*`, `guides/02-testing-experience/`, `guides/01a-project-manifest/` | `npx iwsdk …`; dev URLs on port 5173 | Use the scoped `npx @iwsdk/cli …` (see `../custom/iwsdk-project-setup`); the scaffold's strict port is 8081 |
+| `ai/index/` | Generated skill `iwsdk-scene-composer` | `iwsdk-compose-scene` |
+
+No official skill in this folder mentions gaze, the `gaze` emulator device or Meta VR Glasses
+yet (1.0.1 copies). Use `../custom/iwsdk-vr-glasses`.
 
 ## Traps the skills don't mention
 

@@ -1,22 +1,23 @@
 # IWSDK × WebXR skill library
 
 [![License: MIT](https://img.shields.io/badge/license-MIT%20%2B%20third--party-blue.svg)](THIRD_PARTY_NOTICES.md)
-![Skills: 56](https://img.shields.io/badge/skills-56-brightgreen.svg)
+![Skills: 57](https://img.shields.io/badge/skills-57-brightgreen.svg)
 ![Claude Code plugin](https://img.shields.io/badge/Claude%20Code-plugin%20marketplace-orange.svg)
 ![IWSDK 1.0.1](https://img.shields.io/badge/IWSDK-1.0.1-purple.svg)
 
 Agent skills for building **WebXR games and apps with Meta's Immersive Web SDK (IWSDK)** in
-Claude Code, testing them on **Meta Quest**, and shipping them on the **Meta Horizon Store** as
-PWAs. The IWSDK team's and Meta's official skills, original skills that fill the testing,
-performance and publishing gaps, and vetted community skills, all checked against IWSDK 1.0.1
-and Meta's live docs on 2026-10-16.
+Claude Code, testing them on **Meta Quest**, getting them ready for **Meta VR Glasses**, and
+shipping them on the **Meta Horizon Store** as PWAs. The IWSDK team's and Meta's official skills,
+original skills that fill the testing, performance and publishing gaps, and vetted community
+skills, all checked against IWSDK 1.0.1 and Meta's live docs (updated after Meta Connect 2026, on
+2026-10-17).
 
 Curated and written by **[Navid Mirzaaghazadeh](https://github.com/mirzaaghazadeh)**. Sister
 library for Unity: [unity-meta-quest-skills](https://github.com/mirzaaghazadeh/unity-meta-quest-skills).
 
 | Folder | Skills | From | License |
 |---|---|---|---|
-| [`skills/custom/`](skills/custom) | 11 | **Original, by Navid Mirzaaghazadeh**: workflow router, setup, Quest Browser features, assets, tests, headset testing, performance, store release pipeline, web VRC audit, store listing, launch plan | MIT |
+| [`skills/custom/`](skills/custom) | 12 | **Original, by Navid Mirzaaghazadeh**: workflow router, setup, Quest Browser features, Meta VR Glasses readiness, assets, tests, headset testing, performance, store release pipeline, web VRC audit, store listing, launch plan | MIT |
 | [`skills/iwsdk-official/`](skills/iwsdk-official) | 13 + 1 agent | The IWSDK team ([facebook/immersive-web-sdk](https://github.com/facebook/immersive-web-sdk)), unchanged, plus [ERRATA](skills/iwsdk-official/ERRATA.md) | MIT |
 | [`skills/meta-official/`](skills/meta-official) | 10 | Meta ([meta-quest/agentic-tools](https://github.com/meta-quest/agentic-tools)), unchanged, plus [ERRATA](skills/meta-official/ERRATA.md) | Apache-2.0 |
 | [`skills/community/`](skills/community) | 22 | Vetted third-party skills, unchanged, each with a `SOURCE.md` | MIT / Apache |
@@ -58,7 +59,7 @@ The five bundles don't overlap. Start with `iwsdk-core`.
 
 | Bundle | Skills | Context per session | What's in it |
 |---|---|---|---|
-| **`iwsdk-core`** | 16 | ~3.0k tokens | Router, verify-first guardrail, metavr, setup and MCP wiring, Quest Browser WebXR features, asset pipeline, automated tests, headset testing, performance, Perfetto, comfort design, store release pipeline, web VRC audit, store listing, launch plan |
+| **`iwsdk-core`** | 17 | ~3.7k tokens | Router, verify-first guardrail, metavr, setup and MCP wiring, Quest Browser WebXR features, Meta VR Glasses readiness, asset pipeline, automated tests, headset testing, performance, Perfetto, comfort design, store release pipeline, web VRC audit, store listing, launch plan |
 | `iwsdk-official` | 13 + agent | ~1.0k | The IWSDK team's skills: `iwsdk-dev` entry point, models, scenes, UI, grab, ray, debug, physics, depth occlusion, real-Quest automation, hosting, PWA packaging, 0.4→0.5 migration, plus the project code-review agent. **Skip it in projects made with `npm create @iwsdk`**: they already have these |
 | `meta-web-extras` | 5 | ~0.4k | Meta's IWSDK skill (written for 0.4, see ERRATA), Meta's PWA store guide, the general submission walkthrough, Meta's multi-stack scaffolder, simpleperf |
 | `community-web` | 10 | ~1.1k | pmndrs uikit / pointer-events / handle (the libraries under IWSDK), three.js loading and shader-stutter fixes, Playwright smoke tests, service-worker updates, Cloudflare hosting and multiplayer |
@@ -121,7 +122,8 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 | Skill | Source | Use it for |
 |---|---|---|
 | `iwsdk-project-setup` | **original** | Node check, `npm create @iwsdk@latest` flags, generated files, Claude Code MCP wiring (`adapter sync`), headless setup, metavr side effects |
-| `quest-browser-webxr` | **original** | What Quest Browser supports (immersive-vr/ar, hands, hit-test, anchors, planes, meshes, depth, layers) and how to request it |
+| `quest-browser-webxr` | **original** | What Quest Browser supports (immersive-vr/ar, hands, eye gaze, hit-test, anchors, planes, meshes, depth, layers), with a Meta VR Glasses column, and how to request it |
+| `iwsdk-vr-glasses` | **original** | Meta VR Glasses: gaze + pinch config that validates in IWSDK 1.0.1, 3° targets, controller-free flows, 70° × 66° layout, IWER and Quest testing |
 | `iwsdk-migrate-0-5` | IWSDK | Upgrade a 0.4.x project: Meta Spatial Editor/GLXF removal, retired Vite plugins, UIKitML changes |
 | `hz-new-project-creation` | Meta | Meta's multi-stack scaffolder (`references/web-project.md`; see ERRATA) |
 
@@ -165,10 +167,10 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 |---|---|---|
 | `horizon-launch-roadmap` | **original** | Hosted web vs Store PWA, 2D vs immersive, the decisions you can't undo (package name, signing key, domain), Early Access |
 | `iwsdk-hosting` | IWSDK | Publish to a public HTTPS origin that can serve `/.well-known/` |
-| `horizon-web-store-publish` | **original** | **The release pipeline**: build → hosting → manifest → Bubblewrap → verify → sideload → ALPHA → promote, asking before every upload; with deploy, APK and upload scripts |
+| `horizon-web-store-publish` | **original** | **The release pipeline**: build → hosting → manifest → Bubblewrap → verify → sideload → ALPHA → promote, device targeting (`quest3+`, "Future devices" for Meta VR Glasses), asking before every upload; with deploy, APK and upload scripts |
 | `iwsdk-pwa-packaging`, `hz-store-pwa` | IWSDK, Meta | The upstream PWA/TWA guides the pipeline builds on (see both ERRATA files) |
 | `horizon-web-vrc-checklist` | **original** | Every active VRC by ID, mapped to web apps (Store and Store 2D columns), each with a WebXR check and a headset test |
-| `horizon-store-listing-assets` | **original** | Store art specs (incl. Mini Landscape), metadata limits, IARC, privacy policy, Data Use Checkup, pricing and web IAP; with an image checker |
+| `horizon-store-listing-assets` | **original** | Store art specs (incl. Mini Landscape), metadata limits, IARC, privacy policy, Data Use Checkup, pricing, price A/B tests, bundles, analytics and web IAP; with an image checker |
 | `hz-store-submit` | Meta | Meta's general submission walkthrough. **Some specs are out of date**: see ERRATA |
 | `pwa-offline` | community (AQaddora) | Service-worker updates, version skew, cache headers |
 | `cf-cli`, `wrangler` | community (Cloudflare) | Host on Cloudflare (new projects / existing Wrangler projects) |
@@ -189,6 +191,11 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 
 ## Notes and decisions
 
+- **Meta VR Glasses (announced at Connect 2026, shipping spring 2027).** Eyes aim and a hand pinch
+  selects; controllers are sold separately; the view is about 70° × 66°. Meta's hosted IWSDK docs
+  were generated from IWSDK 0.5.3 and show two config keys that IWSDK 1.0.1 rejects:
+  `iwsdk-vr-glasses` uses the keys that validate. Condensed facts with sources:
+  [docs/meta-reference/](docs/meta-reference).
 - **Projects made with `npm create @iwsdk` already contain IWSDK's 12 skills**, its review agent
   and MCP config. That's why the official skills are a separate bundle and `iwsdk-core` doesn't
   repeat them.

@@ -7,9 +7,10 @@
 # ~/.bubblewrap/android_sdk (where Bubblewrap installs them), ANDROID_HOME and ANDROID_SDK_ROOT.
 # Node is used to parse assetlinks JSON (Bubblewrap already needs Node 18+).
 # Exit: 0 = no FAIL (read RISK/WARN lines), 1 = at least one FAIL, 2 = usage/tooling error.
-# Rules verified 2026-10-16 against developers.meta.com/horizon/resources/publish-mobile-manifest/
+# Rules verified 2026-10-17 against developers.meta.com/vr/resources/publish-mobile-manifest/
 # (2026-10-15), /vrc-quest-packaging-1..6/, /vrc-quest-security-2/ (2026-03-30), /permissions-*,
-# and the meta-quest/bubblewrap template (packages/core/template_project, main @ 2026-09-16).
+# /vr/essentials/app-compatibility/ (2026-10-13), and the meta-quest/bubblewrap template
+# (packages/core/template_project, main @ 2026-09-16).
 set -u
 
 APK="${1:-}"; shift || true
@@ -172,6 +173,19 @@ else
     [ "$MODE" = "immersive" ] && risk "no android.hardware.vr.headtracking uses-feature" || pass "no headtracking feature (2D)"
   fi
   has "com.oculus.supportedDevices" && pass "com.oculus.supportedDevices declared" || risk "no com.oculus.supportedDevices meta-data (not in the Bubblewrap template); set device targeting in the Dashboard and check the build's Test Status"
+  # Declared input (essentials/app-compatibility, 2026-10-13): handtracking required=false +
+  # HAND_TRACKING = controllers and hands; required=true = hands only; neither = controllers only
+  if has "oculus.software.handtracking"; then
+    ht=$(attr_after "oculus.software.handtracking" required)
+    case "$ht" in
+      true|0xffffffff) echo "INFO  declares hands only: every flow must work without controllers";;
+      *) echo "INFO  declares controllers and hands (Bubblewrap default): hands-only play must work from launch (Tracking.2; Meta VR Glasses ship without controllers)";;
+    esac
+  else
+    warn "no oculus.software.handtracking declaration: controllers only (Meta VR Glasses ship without controllers)"
+  fi
+  has "com.meta.store.defaultDeviceTargets" && echo "INFO  com.meta.store.defaultDeviceTargets present (presets Supported Devices; an upload --channel suffix overrides it)"
+  echo "INFO  Meta VR Glasses delivery: include Future devices in the build's Supported Devices, or upload with --channel \"alpha:quest3+\""
   echo "$XMLTREE" | grep -q "installLocation" && pass "installLocation declared" || risk "no installLocation (publish-mobile-manifest asks for auto; the Bubblewrap template omits it)"
   launcher_attrs=$(echo "$XMLTREE" | awk '/[".]LauncherActivity"/{f=1; next} f && /E: /{exit} f')
   echo "$launcher_attrs" | grep -q "excludeFromRecents" && pass "launch activity sets excludeFromRecents" || risk "launch activity has no excludeFromRecents=true (publish-mobile-manifest asks for it; the Bubblewrap template omits it)"

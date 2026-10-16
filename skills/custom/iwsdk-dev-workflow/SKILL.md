@@ -5,19 +5,21 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   Start-here map for making a WebXR game or app with Meta's Immersive Web SDK
-  (IWSDK) and Claude Code, testing it on Meta Quest, and shipping it on the
-  Meta Horizon Store as a PWA. Gives the end-to-end order (plan, set up,
-  build, test in the IWER emulator, test on the headset, optimise, host and
-  package, VRC audit, store listing, upload, submit), names the skill that
-  handles each step, and lists the hard rules (ask before deploys, uploads and
-  installs; never publish the keystore; prove behaviour in the runtime and on
-  the device). Use when starting or planning an IWSDK or WebXR project, when
-  unsure which skill fits, when the user asks "where do I start", "what's
-  next", "how do I ship my WebXR game", or at the start of any multi-step
-  IWSDK task.
+  (IWSDK) and Claude Code, testing it on Meta Quest, getting it ready for Meta
+  VR Glasses (eyes and hands, no controllers), and shipping it on the Meta
+  Horizon Store as a PWA. Gives the end-to-end order (plan, set up, build,
+  test in the IWER emulator, test on the headset, optimise, host and package,
+  VRC audit, store listing, upload, submit), names the skill that handles each
+  step, points to IWSDK's docs on Meta's site and says when to trust the
+  installed package instead, and lists the hard rules (ask before deploys,
+  uploads and installs; never publish the keystore; prove behaviour in the
+  runtime and on the device). Use when starting or planning an IWSDK or WebXR
+  project, when unsure which skill fits, when the user asks "where do I
+  start", "what's next", "how do I ship my WebXR game", "does it work on Meta
+  VR Glasses", or at the start of any multi-step IWSDK task.
 ---
 
 # IWSDK WebXR workflow: start here
@@ -48,16 +50,27 @@ before acting on a step.
    (GLXF, Meta Spatial Editor, `vite-plugin-uikitml`) → **`iwsdk-migrate-0-5`** first.
 3. For any change to app code, scenes, models or UI, invoke **`iwsdk-dev`** first. It picks the
    greenfield or bounded-change playbook and calls the specialists.
+4. **Target devices.** Meta VR Glasses (spring 2027; v207 SDKs out now) use gaze to aim, a
+   hand pinch to select, usually no controllers, and a 70° × 66° view. If the app should run
+   there, load **`iwsdk-vr-glasses`** while planning: the input plan changes the design, not
+   just the config.
+5. **Docs.** IWSDK's docs now live on Meta's site
+   (https://developers.meta.com/vr/documentation/iwsdk/guides/overview/, Markdown index at
+   https://developers.meta.com/vr/llmstxt/documentation/iwsdk/llms.txt/), but those pages
+   describe IWSDK **0.5.3** and show some config keys 1.0.1 rejects. When a hosted page and the
+   installed package disagree, the package wins (`.d.ts` files, `npx @iwsdk/cli <domain>
+   --help`, `npx @iwsdk/cli mcp inspect`). Differences: this library's
+   `docs/meta-reference/web-iwsdk-docs-on-meta.md`; https://iwsdk.dev matches 1.0.1.
 
 ## 2. The path from idea to store
 
 | # | Phase | Skills, in order | Done when |
 |---|---|---|---|
-| 0 | Plan | `game-gdd-author`, `prototype-fast`, `hz-immersive-designer`, `xr-ux-design-and-performance-budgeting`, `horizon-launch-roadmap` | Core loop proven; VR vs MR vs browser, immersive vs 2D, hosted web vs Store PWA decided |
-| 1 | Set up | `iwsdk-project-setup` (`npm create @iwsdk@latest`), `quest-browser-webxr` (does Quest Browser support the features you need?) | `npm run dev` works; Claude Code sees `iwsdk-runtime`; `xr enter` works in the emulator |
-| 2 | Build | `iwsdk-dev` → `iwsdk-build-model`, `iwsdk-compose-scene`, `iwsdk-ui`, `iwsdk-physics`, `iwsdk-depth-occlusion`; assets: `iwsdk-asset-pipeline`, `scenario-blender-expert`, `scenario-blender-retopology`, `scenario-blender-uv-baking` | Feature works in the managed runtime with ECS evidence |
-| 3 | Test in the emulator | `iwsdk-grab`, `iwsdk-ray`, `iwsdk-debug`, `iwsdk-testing` (smoke test, CI) | Smoke test green; interactions proven with state |
-| 4 | Test on the Quest | `iwsdk-quest-device-testing`, `iwsdk-native-xr-test`, `hz-vr-debug`, `metavr-cli`, `game-playtest` | Headset checklist passes; playtest notes logged |
+| 0 | Plan | `game-gdd-author`, `prototype-fast`, `hz-immersive-designer`, `xr-ux-design-and-performance-budgeting`, `horizon-launch-roadmap`; `iwsdk-vr-glasses` §1 if VR Glasses are a target | Core loop proven; VR vs MR vs browser, immersive vs 2D, hosted web vs Store PWA, controllers required vs optional decided |
+| 1 | Set up | `iwsdk-project-setup` (`npm create @iwsdk@latest`), `quest-browser-webxr` (does Quest Browser support the features you need?), `iwsdk-vr-glasses` §2 (gaze config) | `npm run dev` works; Claude Code sees `iwsdk-runtime`; `xr enter` works in the emulator |
+| 2 | Build | `iwsdk-dev` → `iwsdk-build-model`, `iwsdk-compose-scene`, `iwsdk-ui`, `iwsdk-physics`, `iwsdk-depth-occlusion`; assets: `iwsdk-asset-pipeline`, `scenario-blender-expert`, `scenario-blender-retopology`, `scenario-blender-uv-baking`; gaze-ready UI and controller-free flows: `iwsdk-vr-glasses` §3-5 | Feature works in the managed runtime with ECS evidence |
+| 3 | Test in the emulator | `iwsdk-grab`, `iwsdk-ray`, `iwsdk-debug`, `iwsdk-testing` (smoke test, CI); `metaVRGlasses` profile + **Gaze + Hands** (`iwsdk-vr-glasses` §7) | Smoke test green; interactions proven with state |
+| 4 | Test on the Quest | `iwsdk-quest-device-testing` (§7 for VR Glasses prep: head-gaze preview, `metavr device fov-sim`, hands-only run), `iwsdk-native-xr-test`, `hz-vr-debug`, `metavr-cli`, `game-playtest` | Headset checklist passes; playtest notes logged |
 | 5 | Optimise | `iwsdk-performance`, `quest-browser-webxr`, `hz-perfetto-debug`, `threejs-perf-loading`; review with the `iwsdk-project-code-reviewer` agent | ≥ 60 fps rendered at an allowed refresh rate in the heaviest scene |
 | 6 | Host and package | `iwsdk-hosting`, then `horizon-web-store-publish` (release pipeline; `iwsdk-pwa-packaging` and `hz-store-pwa` are the upstream guides it builds on) | Signed APK sideloaded; launches without a URL bar; assetlinks live; keystore URL is 404 |
 | 7 | Store readiness | `horizon-web-vrc-checklist` | Every applicable VRC passes on the device |
@@ -76,16 +89,18 @@ before acting on a step.
   returns 404. Remind the user to back up the keystore: without it the app can't be updated.
 - **Prove it in the runtime, then on the device.** Typecheck → `dev up` → ECS/XR evidence
   (`xr status` shows `sessionActive`) → headset. A compile or a flat screenshot isn't proof.
-- **Versions:** all `@iwsdk/*` packages on one version (1.0.1 when checked), `three` aliased to
-  `npm:super-three@0.181.0` with an `overrides` entry, Three.js classes imported from
-  `@iwsdk/core`.
+- **Versions:** all `@iwsdk/*` packages on one version (1.0.1 = npm `latest` when checked;
+  `1.1.0-rc.1` on `next` moves `three` to super-three 0.185.0: don't adopt it unasked), `three`
+  aliased to `npm:super-three@0.181.0` with an `overrides` entry, Three.js classes imported
+  from `@iwsdk/core`.
 - **One of each:** one scaffold (`npm create @iwsdk@latest`), one entry skill for app code
   (`iwsdk-dev`), one release pipeline (`horizon-web-store-publish`), one verify-first skill
   (`hz-quest-verify-first`).
-- **Conflicting guidance:** IWSDK APIs → the `iwsdk-*` official skills plus
-  `skills/iwsdk-official/ERRATA.md` (Meta's `hz-iwsdk-webxr` was written for IWSDK 0.4; see
-  `iwsdk-performance/references/older-advice.md`). Store values → the `horizon-*` skills over
-  `hz-store-submit` and `hz-store-pwa`. When in doubt, check live docs.
+- **Conflicting guidance:** IWSDK APIs → the installed package, then the `iwsdk-*` official
+  skills plus `skills/iwsdk-official/ERRATA.md` (Meta's `hz-iwsdk-webxr` was written for IWSDK
+  0.4, see `iwsdk-performance/references/older-advice.md`; Meta's hosted IWSDK pages for 0.5.3).
+  Store values → the `horizon-*` skills over `hz-store-submit` and `hz-store-pwa`. When in
+  doubt, check live docs.
 - **Built-ins first:** IWSDK already provides grabbing, ray/pointer interaction, UIKitML panels,
   locomotion, physics and audio. `@iwsdk/core` 1.0.1 is built on `@pmndrs/uikit`,
   `@pmndrs/handle` and `@pmndrs/pointer-events`, so use `pmndrs-uikit`, `pmndrs-handle` and
@@ -115,6 +130,8 @@ before acting on a step.
 | gravity, collisions, throwing | `iwsdk-physics` |
 | passthrough occlusion, depth | `iwsdk-depth-occlusion` |
 | does Quest Browser support X, WebXR session options | `quest-browser-webxr` |
+| make it work on Meta VR Glasses, gaze and pinch, eye tracking, controller-free / hands-only play, narrower field of view | `iwsdk-vr-glasses` (then `iwsdk-ray`, `iwsdk-grab`, `iwsdk-ui` for the code) |
+| IWSDK docs on Meta's site disagree with the code, "which MCP tools exist" | `docs/meta-reference/web-iwsdk-docs-on-meta.md`, `npx @iwsdk/cli mcp inspect` |
 | check grab or ray interactions in the emulator | `iwsdk-grab`, `iwsdk-ray` |
 | a state/physics/interaction bug | `iwsdk-debug` |
 | automated tests, CI | `iwsdk-testing` |
@@ -137,6 +154,9 @@ before acting on a step.
 
 - https://iwsdk.dev, https://iwsdk.dev/llms.txt, https://iwsdk.dev/ai/
 - https://github.com/facebook/immersive-web-sdk (1.0.1, commit `0778f518`): `packages/cli/guidance/AGENTS.md`, `docs/guides/18-platform-services.md`
+- https://developers.meta.com/vr/documentation/iwsdk/guides/overview/ and https://developers.meta.com/vr/llmstxt/documentation/iwsdk/llms.txt/ (pages dated 2026-09-04 to 2026-09-23, generated from IWSDK 0.5.3)
+- https://developers.meta.com/horizon/essentials/get-started-with-glasses/ (2026-10-13), https://developers.meta.com/blog/meta-connect-recap-start-building-the-future-of-vr/ (2026-09-24)
+- https://www.npmjs.com/package/@iwsdk/core (`latest` 1.0.1, `next` 1.1.0-rc.1, checked 2026-10-17)
 - https://developers.meta.com/horizon/resources/vrc-quest-performance-1/
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17

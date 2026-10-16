@@ -5,22 +5,21 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   Prepare and validate the Meta Horizon Store listing for a WebXR / IWSDK PWA or
-  a 2D PWA: exact art specs (Cover Landscape/Square/Portrait, Hero, Mini
-  Landscape, Logo, Icon, Spatialized tile, screenshots, trailer, 360 preview),
-  asset VRCs, metadata limits (name, short and long description, keywords),
-  specs metadata (play area, input, comfort, internet), age group
-  self-certification and IARC rating, privacy policy and Data Use Checkup for
-  Digital Goods and user ID, pricing, web IAP limits (WebXR PWAs only, no
-  subscriptions), sales, promo codes, keys, Early Access, Coming Soon and
-  pre-orders. Includes an image checker. Use when the user asks for "store
-  assets for my web app", "cover art size", "screenshots of my WebXR game",
-  "trailer requirements", "store description", "age rating / IARC", "privacy
-  policy for my Quest PWA", "can my PWA sell items", "set the price", "run a
-  sale", "generate keys", or "early access". Replaces the asset table in Meta's
-  hz-store-submit, which has wrong dimensions and limits.
+  a 2D PWA: art specs (covers, Hero, Mini Landscape, Logo, Icon, Spatialized
+  tile, screenshots, trailer, 360 preview), asset VRCs, metadata limits, specs
+  (play area, input, comfort, internet), age group and IARC, privacy policy and
+  Data Use Checkup, pricing, price A/B tests, Try Before You Buy limits, web IAP
+  limits (WebXR PWAs only, no subscriptions), sales, keys, Early Access,
+  pre-orders, Store analytics, and what Meta VR Glasses change. Includes an
+  image checker. Use when the user asks for "store assets for my web app",
+  "cover art size", "screenshots of my WebXR game", "trailer requirements",
+  "store description", "age rating / IARC", "privacy policy for my Quest PWA",
+  "can my PWA sell items", "set the price", "A/B test my price", "free trial",
+  "run a sale", "generate keys", or "early access". Replaces the asset table
+  in Meta's hz-store-submit, which has wrong dimensions and limits.
 ---
 
 # Horizon Store listing for web apps: assets, metadata, rating, pricing
@@ -30,12 +29,18 @@ description: >-
 A PWA's store listing uses the same Developer Dashboard forms, art specs and VRCs as a native
 app; the asset VRCs apply to both the Store and Store (2D) columns. What differs for web apps:
 how you capture screenshots, the internet requirement, and monetization (Digital Goods API, WebXR
-PWAs only). Policy detail: [references/policy-pricing.md](references/policy-pricing.md).
+PWAs only). Policy detail: [references/policy-pricing.md](references/policy-pricing.md); what
+Connect 2026 changed: this repo's `docs/meta-reference/store-2026.md`.
 
 Correction to Meta's `hz-store-submit`: it lists a 1024 px icon, a 2560 × 1440 hero, a
 3-screenshot minimum and 30/150/4000-character name/short/long. The live pages give the values
 below. If this skill is older than "Last verified", run
-`metavr docs fetch https://developers.meta.com/horizon/resources/asset-guidelines/`.
+`metavr docs fetch https://developers.meta.com/vr/resources/asset-guidelines/`.
+
+**Meta VR Glasses (spring 2027) don't change the listing:** no new asset type, metadata field or
+VRC as of 2026-10-17. The Store shows hand-capable titles first to VR Glasses owners without
+controllers (Connect recap, 2026-09-24), and every Bubblewrap TWA declares controllers and hands
+in its manifest, so make hands-only play work before you list hands.
 
 ## 1. Art assets (Asset design guidelines, updated 2026-05-11)
 
@@ -58,7 +63,8 @@ below. If this skill is older than "Last verified", run
 "All assets support 24 and 32-bit PNGs ... the 8-bit alpha layer is ignored unless it's for the
 Logo." Keep titles and focal points in the safe area (templates: https://metaque.st/storetemplates;
 no pixel values on the page). Branded assets carry the exact app title; only the icon is exempt.
-Each extra store language needs localized assets.
+Each extra store language needs localized assets. Test cover art with the Dashboard's creative
+A/B test on the product page (ab-testing-instructions, 2024-12-16).
 
 Asset VRCs to self-review: Asset.2 (cover art: branding only, no taglines or banners), Asset.3
 (Rec: no text in the top or bottom 20% of covers), Asset.5, Asset.6 (no other VR platforms'
@@ -101,18 +107,23 @@ Bubblewrap turns into the launcher icon; see `horizon-web-store-publish`.
 
 Web-specific: a PWA loads from your server, so declare the internet requirement truthfully and
 handle offline (Functional.7, Rec). Declare only input modalities that work alone from launch
-(Tracking.2) and a play area that matches (Tracking.1). Web deploys change the app without review;
-keep descriptions and media matching what is live (Content.2).
+(Tracking.2) and a play area that matches (Tracking.1); remember the TWA's manifest always
+declares controllers and hands (app-compatibility, 2026-10-13). Web deploys change the app
+without review; keep descriptions and media matching what is live (Content.2).
+**Purchase-Blocked Devices** hides the app from a device's Store (target-builds-by-device,
+2026-09-04).
 
 Copywriting: the first sentence says what the player does; every claim is visible in the build;
 no other platforms' names; Meta brands only per the Brand Guidelines (Publishing.8); no keyword
-stuffing, all-caps titles, or price text in the name or art. Comfort Level (store policy,
-unverified on developers.meta.com): Comfortable = little or no camera/player motion; Moderate =
-more motion; Intense = first-person camera motion, acceleration or major movement.
+stuffing, all-caps titles, or price text in the name or art. **Comfort Level** (App policies §5.1,
+2026-03-10): Comfortable generally avoids camera movement, player motion and disorienting effects
+(typically a fixed camera); Moderate has more camera and player motion; Intense usually has
+first-person camera motion, acceleration or significant movement.
 
 ## 4. Age group and rating
 
-- **IARC rating** from the Content Rating step; free and instant.
+- **IARC rating** from the Content Rating step; free and instant. Apps released in **South Korea**
+  also need a **GRAC** rating (App policies §5.2.1, 2026-03-10).
 - **Age group self-certification** is separate and mandatory: Teens and Adults (13+), Mixed Ages
   (10-12 plus 13+), Children (10-12); no users under 10. The same value goes in every
   `ovr-platform-util --age-group` upload.
@@ -135,32 +146,55 @@ how users request deletion. 2D PWAs share cookies and site data with Quest Brows
 `getLoggedInUserId()` (User ID / User Profile grant) (ps-iap). DUC requests are approved
 automatically during development; submitting for review or raising release-channel limits ends
 that; recertify **yearly** or the app is removed. Test users can call these features before DUC
-approval, except getting the logged-in user.
+approval, except getting the logged-in user. DUC compliance also gates the User Demographics
+dashboard.
 
-## 6. Pricing and monetization (summary; details in references)
+## 6. Pricing, experiments and monetization (summary; details in references)
 
 - App price: free or $0.99-$299.99 MSRP; add-ons $0.99-$99.99; local pricing per country.
 - **Web IAP**: Digital Goods API + Payment Request with `https://quest.meta.com/billing`, **WebXR
   PWAs only**, **subscriptions not supported**, available only when installed from the Store
   (ALPHA and BETA count). Manage products under Monetization > Add-ons. 2D PWAs get no Store IAP:
   charge for the app, or run ads within Ads.1-7.
-- Sales (Growth > Manage Promotions), promo codes (Growth > Promo Codes, not for free apps), keys
-  (up to 250 per request, 2,000 per 6 months), Early Access (new apps only; turning it off is
-  irreversible), Coming Soon (up to 360 days) and pre-orders (up to 90 days), both only during the
-  initial submission.
+- **Price A/B test** (US only; page 2025-10-01): Growth > Price A/B Testing; starts ≥ 3 days after
+  setup, runs up to 90 days, can't be edited after submission, and can cost sale eligibility if
+  it ends within 30 days of a sale. Connect 2026 listed "A/B Pricing" as new; no page describes
+  changes yet.
+- **Try Before You Buy** (2026-06-29): **not available for 2D apps**. For an immersive PWA it is
+  undocumented (unverified): time-based trials need no code; achievement-based trials need a
+  "simple" achievement, which a web app can only unlock server-to-server (web ps-achievements,
+  2026-10-14).
+- Sales (Growth > Manage Promotions; bundles can now join store-wide sales), promo codes (Growth >
+  Promo Codes, not for free apps), keys (up to 250 per request, 2,000 per 6 months), Early Access
+  (new apps only; turning it off is irreversible), Coming Soon (up to 360 days) and pre-orders (up
+  to 90 days), both only during the initial submission. Meta Credits no longer work for Store
+  purchases (since 2026-06-09).
+
+## 7. After launch: analytics
+
+Benchmarks (> 100 lifetime active users), User Demographics (≥ 100 and DUC compliance) and alerts
+(threshold alerts: crash rate > 5%, Quest 3 FPS < 72, 1-star ratings, startup > 19 s) live under
+Analytics in the Dashboard. Performance analytics are **not available for web apps**, and the
+alerts page says alerts "are not enabled on MQDH or web" (ambiguous for PWAs; check the
+Dashboard). The read-only Meta AI Developer Assistant (icon after Help) answers metrics and
+reviewer-feedback questions; suggest it to the user. Details: references/policy-pricing.md §9.
 
 ## Sources
 
-- https://developers.meta.com/horizon/resources/asset-guidelines/ (2026-05-11)
-- https://developers.meta.com/horizon/resources/publish-app-metadata/ (2025-08-20)
-- https://developers.meta.com/horizon/resources/publish-quest-req/ (2026-08-19)
-- https://developers.meta.com/horizon/resources/age-groups/ (2026-04-02)
-- https://developers.meta.com/horizon/resources/publish-data-use/ (2026-10-14)
-- https://developers.meta.com/horizon/documentation/web/ps-iap/ (2026-10-14), /ps-monetization-overview/ (2026-07-22), /pwa-2d-support/ (2026-07-22), /browser-mqdh/
-- https://developers.meta.com/horizon/resources/monetization/ (2026-05-11), /monetization-pricing/ (2026-03-30)
-- https://developers.meta.com/horizon/resources/monetization-sales-promotions/ (2026-04-29), /monetization-custom-promo-codes/ (2026-04-29)
-- https://developers.meta.com/horizon/resources/early-access/ (2025-12-17), /pre-launch-listings/ (2026-08-06)
-- https://developers.meta.com/vr/policy/distribution-options/ (2026-03-23)
-- https://developer.oculus.com/policy/store-policies (comfort ratings, IARC; not re-fetched)
+Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
 
-Last verified: 2026-10-16
+- https://developers.meta.com/vr/resources/asset-guidelines/ (2026-05-11)
+- https://developers.meta.com/vr/resources/publish-app-metadata/ (2025-08-20)
+- https://developers.meta.com/vr/resources/publish-quest-req/ (2026-08-19)
+- https://developers.meta.com/vr/resources/age-groups/ (2026-04-02)
+- https://developers.meta.com/vr/resources/publish-data-use/ (2026-10-14)
+- https://developers.meta.com/vr/documentation/web/ps-iap/ (2026-10-14), /ps-achievements/ (2026-10-14), /ps-monetization-overview/ (2026-07-22), /pwa-2d-support/ (2026-07-22), /browser-mqdh/
+- https://developers.meta.com/vr/resources/monetization/ (2026-05-11), /monetization-pricing/ (2026-03-30), /monetization-price-ab-testing/ (2025-10-01), /try-before-you-buy/ (2026-06-29), /ab-testing-instructions/ (2024-12-16)
+- https://developers.meta.com/vr/resources/monetization-sales-promotions/ (2026-04-29), /monetization-custom-promo-codes/ (2026-04-29), /monetization-bundles/ (2026-06-30), /monetization-meta-credits-open-beta/ (2026-06-09)
+- https://developers.meta.com/vr/resources/early-access/ (2025-12-17), /pre-launch-listings/ (2026-08-06)
+- https://developers.meta.com/vr/resources/publish-metrics-benchmarks/ (2026-05-22), /user-demographics/ (2026-05-06), /publish-analytics-alerts/ (2025-10-01), /publish-performance-analytics/ (2025-02-14)
+- https://developers.meta.com/vr/resources/publish-release-channels-device-targeting/ (2026-09-04); https://developers.meta.com/vr/essentials/app-compatibility/ (2026-10-13), /ai-developer-assistant/ (2026-09-24)
+- https://developers.meta.com/vr/policy/distribution-options/ (2026-03-23), /app-policies/ (comfort ratings §5.1, IARC/GRAC §5.2, 2026-03-10)
+- https://developers.meta.com/vr/blog/smarter-pricing-better-trials-deeper-analytics-for-VR-developers/ (2026-08-11); https://developers.meta.com/blog/meta-connect-recap-start-building-the-future-of-vr/ (2026-09-24)
+
+Last verified: 2026-10-17

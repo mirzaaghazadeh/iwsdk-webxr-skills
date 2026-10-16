@@ -80,6 +80,9 @@ Points to adapt:
 - **Version code:** commit `appVersionCode` changes in `twa-manifest.json` and keep
   `--skipVersionUpgrade`, so the uploaded code is reviewable and never collides with a
   previous upload.
+- **Device targets:** set `QUEST_DEVICE_TARGETS: quest3+` (or another specifier) on the upload
+  step only if the build must be device-targeted; the wrapper sends `--channel "alpha:quest3+"`.
+  Builds that will be submitted must include Future devices (Dashboard) to reach Meta VR Glasses.
 - **No production from CI:** the wrapper refuses `store` without `CONFIRM_STORE_UPLOAD=yes`; don't
   set it in workflows. Promote with `ovr-platform-util set-release-channel-build` from a
   manual job or the Dashboard, after the VRC checklist.

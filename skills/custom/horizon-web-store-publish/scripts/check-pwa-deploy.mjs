@@ -14,10 +14,10 @@
 //              a handle_all_urls statement for --package with the --sha256 fingerprint
 //   exposure : android.keystore / twa-manifest.json not served from the web root
 //
-// Sources (verified 2026-10-16):
-//   developers.meta.com/horizon/documentation/web/pwa-overview-gs/ (2026-09-23)
-//   developers.meta.com/horizon/documentation/web/pwa-packaging/ (2026-07-22)
-//   developers.meta.com/horizon/documentation/web/pwa-2d-support/ (2026-07-22)
+// Sources (verified 2026-10-16; URLs moved to /vr/ on 2026-10-17, pages unchanged):
+//   developers.meta.com/vr/documentation/web/pwa-overview-gs/ (2026-09-23)
+//   developers.meta.com/vr/documentation/web/pwa-packaging/ (2026-07-22)
+//   developers.meta.com/vr/documentation/web/pwa-2d-support/ (2026-07-22)
 //   developer.android.com/training/app-links/configure-assetlinks (hosting rules)
 //   github.com/meta-quest/bubblewrap packages/core/src/lib/{TwaManifest,util}.ts (icon selection)
 // Needs Node 18+ (global fetch). No dependencies. Exit: 0 = no FAIL, 1 = FAIL, 2 = usage error.

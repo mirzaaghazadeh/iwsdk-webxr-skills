@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   Pre-submission audit of a WebXR / IWSDK PWA (immersive) or a 2D PWA against
   Meta's current Virtual Reality Checks (VRCs) for the Horizon Store, by VRC ID,
@@ -16,17 +16,18 @@ description: >-
   evidence table. Use when the user asks "will my WebXR app pass review", "VRC
   checklist for a PWA", "which VRCs apply to a 2D web app", "focus awareness in
   WebXR", "pause when the Universal Menu opens", "frame rate requirement for
-  WebXR", "entitlement check for a PWA", or "why was my web app rejected
-  (VRC...)". Takes precedence over the generic VRC notes in Meta's
-  hz-store-submit, which are partly out of date.
+  WebXR", "entitlement check for a PWA", "is my PWA ready for Meta VR Glasses",
+  or "why was my web app rejected (VRC...)". Takes precedence over the generic
+  VRC notes in Meta's hz-store-submit, which are partly out of date.
 ---
 
 # Horizon Store VRC audit for WebXR and 2D PWAs
 
 > Made by [Navid Mirzaaghazadeh](https://github.com/mirzaaghazadeh) · part of [iwsdk-webxr-skills](https://github.com/mirzaaghazadeh/iwsdk-webxr-skills) · MIT
 
-Meta's VRC guide (updated 2026-08-19) lists 84 IDs; 80 are active (retired: Performance.2,
-Functional.8, Functional.11, Input.6). It has two columns: **Meta Horizon Store** (apply it to an
+Meta's VRC guide (updated 2026-08-19, unchanged on 2026-10-17) lists 84 IDs; 80 are active
+(retired: Performance.2, Functional.8, Functional.11, Input.6). Connect 2026 added no VRC for Meta
+VR Glasses; the readiness checks for it are a separate block below. It has two columns: **Meta Horizon Store** (apply it to an
 immersive WebXR PWA) and **Meta Horizon Store (2D)** (apply it to a 2D PWA). The full table, with
 a web check and a test for all 80, is in [references/vrc-web-reference.md](references/vrc-web-reference.md).
 
@@ -56,7 +57,7 @@ Individual VRC pages win over Meta's "slightly out of date" test plans and over
    Evidence | Fix`. Required FAILs first. No PASS without evidence (log line, screenshot, OVR
    Metrics capture, DevTools trace, code reference).
 5. Before quoting a requirement, re-check the page if this skill is older than "Last verified":
-   `metavr docs fetch https://developers.meta.com/horizon/resources/vrc-quest-<area>-<n>/`.
+   `metavr docs fetch https://developers.meta.com/vr/resources/vrc-quest-<area>-<n>/`.
 
 ## Required VRCs that web apps most often miss
 
@@ -79,7 +80,7 @@ Column key: **S** = Store (immersive PWA), **2D** = Store (2D). ✓ required, + 
 | Functional.14 | ✓/+ | Apps that can launch in passthrough: Bubblewrap's immersive template sets `ossplash.background=passthrough-contextual`; start `immersive-ar` without a VR flash | Enable passthrough in MR Home, launch, watch the splash |
 | Security.2 | ✓/✓ | Minimum permissions: Bubblewrap adds `HAND_TRACKING` always; `POST_NOTIFICATIONS`, `RECORD_AUDIO`, `USE_SCENE` only via flags (set false if unused); deny every web permission prompt gracefully | Deny each prompt (mic, camera, spatial data): app shows a message or keeps working |
 | Tracking.1 | ✓/- | Declared play area matches; standing/roomscale content fits 6.5' × 6.5' | Play several levels in each declared mode |
-| Tracking.2 | ✓/✓ | Each declared modality works alone from launch (hands-only: request `'hand-tracking'`, every menu works with pinch `select`) | Play through with controllers only, then hands only |
+| Tracking.2 | ✓/✓ | Each declared modality works alone from launch (hands-only: request `'hand-tracking'`, every menu works with pinch `select`). Bubblewrap's template always declares controllers **and** hands in the manifest (app-compatibility, 2026-10-13); make hands-only play work, since how review weighs that against the metadata is undocumented | Play through with controllers only, then hands only |
 | Input.4 | ✓/- | Focus-aware: in `visible-blurred` keep rendering, hide hands/controllers (or rest them at the sides), ignore input | Open the Universal Menu: scene renders, no in-app hands, no reaction to input |
 | Input.7 | ✓/✓ | Handle `inputsourceschange`; swap hand and controller visuals and interactors | Auto-switch on; pick up and put down controllers repeatedly |
 | Input.8 | ✓/✓ | Palm pinch is reserved by Browser; bind nothing to it; keep hands visible so users can exit | Palm toward headset, pinch: no in-app reaction |
@@ -94,7 +95,8 @@ offer another control), Input.2 grip (`squeeze`) to pick up, Audio.1 spatial aud
 ## Entitlement (Security.1, Recommended) for a WebXR PWA
 
 No Meta web page covers it: the web IAP page links to `/documentation/web/ps-entitlement-check/`,
-which returns 404 (2026-10-16). Pattern assembled from documented pieces (unverified as a whole):
+which returns 404 (re-checked 2026-10-17). Pattern assembled from documented pieces (unverified as
+a whole):
 
 1. In the installed WebXR PWA, `getDigitalGoodsService('https://quest.meta.com/billing')` then
    `service.getLoggedInUserId()`. `0` means no ID. Needs a Data Use Checkup with the User ID or
@@ -107,6 +109,20 @@ which returns 404 (2026-10-16). Pattern assembled from documented pieces (unveri
 
 2D PWAs don't get the Digital Goods service (IAP is WebXR-only per ps-iap), so this pattern is
 immersive-only.
+
+## Meta VR Glasses readiness (not VRCs)
+
+Report these separately from the VRC table, never as VRC FAILs. VR Glasses ship in spring 2027
+without controllers, run the same Quest Browser and Store, and the Store shows hand-capable titles
+first to owners without controllers (Connect recap, 2026-09-24).
+
+| Check | Pass condition | Source |
+|---|---|---|
+| Input | Every flow works with hands; IWSDK gaze-and-pinch per `iwsdk-vr-glasses` | app-compatibility (2026-10-13) |
+| Field of view | Key UI readable in 70° × 66°: IWER's VR Glasses profile, or `metavr device fov-sim enable` (`--perceived` = 58° × 54°) on a Quest 3/3S/Pro | field-of-view (2026-09-25) |
+| No hover-only actions | Gaze is private; hover never fires | Connect recap |
+| Store targeting | The build's Supported Devices include Future devices (`horizon-web-store-publish` section 7a) | target-builds-by-device (2026-09-04) |
+| Binary | 64-bit: a TWA has no native code, so it passes | app-compatibility |
 
 ## Device test session (copy and adapt)
 
@@ -131,16 +147,19 @@ available for web apps (publish-performance-analytics), so local evidence is all
 
 ## Sources
 
-- https://developers.meta.com/horizon/resources/publish-quest-req/ (2026-08-19; Store and Store (2D) columns)
-- https://developers.meta.com/horizon/resources/vrc-quest-packaging-1/ ... -6/ (2024-07-31 to 2024-09-03)
-- https://developers.meta.com/horizon/resources/vrc-quest-performance-1/ (2025-10-22), -performance-3/, -performance-4/
-- https://developers.meta.com/horizon/resources/vrc-quest-functional-2/ (rev. 2025-09-05), -functional-5/, -functional-9/, -functional-12/, -functional-14/
-- https://developers.meta.com/horizon/resources/vrc-quest-security-1/ (2025-04-08), -security-2/ (2026-03-30)
-- https://developers.meta.com/horizon/resources/vrc-quest-input-4/ (2025-09-26), -input-7/, -input-8/, -tracking-1/ (2025-05-15), -tracking-2/ (2025-12-16)
-- https://developers.meta.com/horizon/resources/publish-mobile-manifest/ (2026-10-15), /permissions-prohibited/ (2025-04-30), /permissions-review-required/ (2025-11-26)
-- https://developers.meta.com/horizon/resources/publish-performance-analytics/
-- https://developers.meta.com/horizon/documentation/web/ps-iap/ (2026-10-14), /ps-iap-s2s/, /webxr-hands/, /pwa-webxr/ (2026-07-22)
+Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
+
+- https://developers.meta.com/vr/resources/publish-quest-req/ (2026-08-19; Store and Store (2D) columns)
+- https://developers.meta.com/vr/resources/vrc-quest-packaging-1/ (and -2/ to -6/; 2024-07-31 to 2024-09-03)
+- https://developers.meta.com/vr/resources/vrc-quest-performance-1/ (2025-10-22), -performance-3/, -performance-4/
+- https://developers.meta.com/vr/resources/vrc-quest-functional-2/ (rev. 2025-09-05), -functional-5/, -functional-9/, -functional-12/, -functional-14/
+- https://developers.meta.com/vr/resources/vrc-quest-security-1/ (2025-04-08), -security-2/ (2026-03-30)
+- https://developers.meta.com/vr/resources/vrc-quest-input-4/ (2025-09-26), -input-7/, -input-8/, -tracking-1/ (2025-05-15), -tracking-2/ (2025-12-16)
+- https://developers.meta.com/vr/resources/publish-mobile-manifest/ (2026-10-15), /permissions-prohibited/ (2025-04-30), /permissions-review-required/ (2025-11-26)
+- https://developers.meta.com/vr/resources/publish-performance-analytics/ (2025-02-14), /publish-release-channels-device-targeting/ (2026-09-04)
+- https://developers.meta.com/vr/essentials/app-compatibility/ (2026-10-13), /field-of-view/ (2026-09-25)
+- https://developers.meta.com/vr/documentation/web/ps-iap/ (2026-10-14), /ps-iap-s2s/, /webxr-hands/, /pwa-webxr/ (2026-07-22)
 - https://immersive-web.github.io/webxr/ (XRVisibilityState, inputsourceschange, reference space reset)
 - https://github.com/meta-quest/bubblewrap (template_project AndroidManifest.xml and build.gradle)
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17

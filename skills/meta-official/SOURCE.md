@@ -4,10 +4,10 @@
 |---|---|
 | Publisher | Meta Platforms, Inc. |
 | Repository | https://github.com/meta-quest/agentic-tools |
-| Commit | `3a8553d10a5a1bd1bf9beaaa950243fbbed3b9ea` (2026-09-23, still the latest on 2026-10-16) |
+| Commit | `3a8553d10a5a1bd1bf9beaaa950243fbbed3b9ea` (2026-09-23 PT / 2026-09-24 UTC, still the latest on 2026-10-17) |
 | License | Apache-2.0 (copy in `LICENSE`) |
-| Fetched | 2026-10-16 |
-| Meta's page | https://developers.meta.com/horizon/discover/ai-tools/ |
+| Fetched | 2026-10-16 (re-checked 2026-10-17: no newer commit, `docs/metavr-cli.md` unchanged) |
+| Meta's page | https://developers.meta.com/vr/discover/ai-tools/ and https://developers.meta.com/vr/essentials/agent-skills/ (2026-09-29) |
 
 The skill folders here are copied unchanged from `skills/` in the repo at the commit above. The same
 copy was reviewed for the sister library
@@ -46,3 +46,7 @@ Those are pointers for other build paths, and nothing for a web app depends on t
 git clone --depth 1 https://github.com/meta-quest/agentic-tools.git /tmp/agentic-tools
 diff -rq /tmp/agentic-tools/skills ./   # review what changed before copying over
 ```
+
+Meta's own routes (`metavr init`, the `meta-vr` plugin, `metavr skills install`, which writes the
+user-level `~/.agents/skills`) install the same skills. Use either those or this folder, not both
+(`docs/meta-reference/ai-tools.md` §3).

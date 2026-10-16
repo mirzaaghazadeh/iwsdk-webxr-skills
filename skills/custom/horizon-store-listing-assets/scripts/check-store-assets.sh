@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # check-store-assets.sh: validate Meta Horizon Store listing art against the Store Art Guidelines
-# (developers.meta.com/horizon/resources/asset-guidelines/, updated 2026-05-11; verified 2026-10-16).
+# (developers.meta.com/vr/resources/asset-guidelines/, updated 2026-05-11; verified 2026-10-17).
 # Usage: check-store-assets.sh <assets-dir>
 # Expected names: cover_landscape.png cover_square.png cover_portrait.png hero.png logo.png icon.png
 #                 mini_landscape.png tile_background.png tile_foreground.png screenshot_*.png
