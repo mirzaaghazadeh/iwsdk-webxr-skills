@@ -24,7 +24,6 @@ Treat its API examples as outdated. For current IWSDK code use `iwsdk-dev` and t
 
 | What the skill says | What's true now | Source |
 |---|---|---|
-| Vite `base: "./"` | Keep the default `"/"` for root deployments, `"/subpath/"` otherwise | [web-hosting](https://developers.meta.com/horizon/documentation/web/web-hosting/) (updated 2026-09-23) |
 | Scripted `twa-manifest.json` with `"features": {}` | `bubblewrap init --metaquest` always enables `features.horizonPlatformSDK` | `@meta-quest/bubblewrap-cli` 1.24.1 source |
 | IAP needs only `applicationId` | Also needs `alphaDependencies.enabled` and `features.horizonBilling`, or Horizon Billing is skipped | Bubblewrap `FeatureManager.ts` |
 | `minSdkVersion: 23`, no SDK-level guidance | Bubblewrap's Quest template (1.24.1) hard-codes targetSdk 32 in both modes and marks head tracking `required="false"`. Meta asks minSdk 29–34, **targetSdk 34 for apps created since 2026-03-01**, and `required="true"` for immersive apps. Whether TWAs are exempt isn't documented: read the first ALPHA upload's test status | [publish-mobile-manifest](https://developers.meta.com/horizon/resources/publish-mobile-manifest/) ✔ re-checked |
