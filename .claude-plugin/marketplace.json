@@ -1,0 +1,150 @@
+{
+  "$schema": "https://json.schemastore.org/claude-code-marketplace.json",
+  "name": "iwsdk-webxr-skills",
+  "description": "Skills for building WebXR games and apps with Meta's Immersive Web SDK (IWSDK), testing them on Meta Quest and shipping them on the Meta Horizon Store as PWAs. Five non-overlapping bundles: start with iwsdk-core.",
+  "owner": {
+    "name": "Navid Mirzaaghazadeh",
+    "url": "https://github.com/mirzaaghazadeh"
+  },
+  "metadata": {
+    "version": "1.0.0"
+  },
+  "plugins": [
+    {
+      "name": "iwsdk-core",
+      "displayName": "IWSDK Core",
+      "description": "Start here. The path from idea to Horizon Store for an IWSDK WebXR app: workflow router, verify-first guardrail, project setup and MCP wiring, Quest Browser WebXR features, asset pipeline, automated tests, headset testing, performance, Perfetto, comfort design, hosting-to-store release pipeline, web VRC audit, store listing and launch planning. Works next to a project scaffolded with npm create @iwsdk, which already has IWSDK's own skills.",
+      "version": "1.0.0",
+      "author": { "name": "Navid Mirzaaghazadeh", "url": "https://github.com/mirzaaghazadeh" },
+      "homepage": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
+      "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
+      "license": "MIT AND Apache-2.0",
+      "keywords": ["iwsdk", "webxr", "meta-quest", "quest-browser", "pwa", "horizon-store", "three.js"],
+      "category": "game-development",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/custom/iwsdk-dev-workflow",
+        "./skills/meta-official/hz-quest-verify-first",
+        "./skills/meta-official/metavr-cli",
+        "./skills/custom/iwsdk-project-setup",
+        "./skills/custom/quest-browser-webxr",
+        "./skills/custom/iwsdk-asset-pipeline",
+        "./skills/custom/iwsdk-testing",
+        "./skills/custom/iwsdk-quest-device-testing",
+        "./skills/custom/iwsdk-performance",
+        "./skills/meta-official/hz-vr-debug",
+        "./skills/meta-official/hz-perfetto-debug",
+        "./skills/meta-official/hz-immersive-designer",
+        "./skills/custom/horizon-web-store-publish",
+        "./skills/custom/horizon-web-vrc-checklist",
+        "./skills/custom/horizon-store-listing-assets",
+        "./skills/custom/horizon-launch-roadmap"
+      ]
+    },
+    {
+      "name": "iwsdk-official",
+      "displayName": "IWSDK Official",
+      "description": "The IWSDK team's own skills and code-review agent: iwsdk-dev entry point, models, scenes, spatial UI, grab, ray, debugging, physics, depth occlusion, real-Quest test automation, hosting, PWA packaging and the 0.4 to 0.5 migration. Skip this bundle in projects made with npm create @iwsdk: they already contain the same skills in .claude/skills.",
+      "version": "1.0.0",
+      "author": { "name": "Meta Platforms, Inc. / IWSDK team (curated by Navid Mirzaaghazadeh)" },
+      "homepage": "https://github.com/facebook/immersive-web-sdk",
+      "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
+      "license": "MIT",
+      "keywords": ["iwsdk", "webxr", "ecs", "uikitml", "physics", "grabbing"],
+      "category": "game-development",
+      "source": "./skills/iwsdk-official",
+      "strict": false,
+      "skills": [
+        "./iwsdk-dev",
+        "./iwsdk-build-model",
+        "./iwsdk-compose-scene",
+        "./iwsdk-ui",
+        "./iwsdk-grab",
+        "./iwsdk-ray",
+        "./iwsdk-debug",
+        "./iwsdk-physics",
+        "./iwsdk-depth-occlusion",
+        "./iwsdk-native-xr-test",
+        "./iwsdk-hosting",
+        "./iwsdk-pwa-packaging",
+        "./iwsdk-migrate-0-5"
+      ]
+    },
+    {
+      "name": "meta-web-extras",
+      "displayName": "Meta Web Extras",
+      "description": "Meta's other official skills that touch web apps: Meta's IWSDK skill (written for IWSDK 0.4; see ERRATA), Meta's PWA store guide, the general store-submission walkthrough, Meta's multi-stack project scaffolder and simpleperf CPU profiling.",
+      "version": "1.0.0",
+      "author": { "name": "Meta Platforms, Inc. (curated by Navid Mirzaaghazadeh)" },
+      "homepage": "https://github.com/meta-quest/agentic-tools",
+      "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
+      "license": "Apache-2.0",
+      "keywords": ["meta-quest", "pwa", "bubblewrap", "store-submission", "simpleperf"],
+      "category": "game-development",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/meta-official/hz-iwsdk-webxr",
+        "./skills/meta-official/hz-store-pwa",
+        "./skills/meta-official/hz-store-submit",
+        "./skills/meta-official/hz-new-project-creation",
+        "./skills/meta-official/hz-simpleperf-debug"
+      ]
+    },
+    {
+      "name": "community-web",
+      "displayName": "Community: Web",
+      "description": "Vetted community skills for the web side: the pmndrs uikit, pointer-events and handle libraries IWSDK is built on, three.js loading and shader-stutter fixes, Playwright smoke tests, service-worker updates, and Cloudflare hosting and multiplayer (Workers, Wrangler, Durable Objects).",
+      "version": "1.0.0",
+      "author": { "name": "Community authors (curated by Navid Mirzaaghazadeh)" },
+      "homepage": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills/blob/main/THIRD_PARTY_NOTICES.md",
+      "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
+      "license": "MIT AND Apache-2.0",
+      "keywords": ["three.js", "pmndrs", "playwright", "pwa", "cloudflare", "websockets"],
+      "category": "game-development",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/community/pmndrs-uikit",
+        "./skills/community/pmndrs-pointer-events",
+        "./skills/community/pmndrs-handle",
+        "./skills/community/threejs-perf-loading",
+        "./skills/community/webapp-testing",
+        "./skills/community/pwa-offline",
+        "./skills/community/cf-cli",
+        "./skills/community/wrangler",
+        "./skills/community/durable-objects",
+        "./skills/community/workers-best-practices"
+      ]
+    },
+    {
+      "name": "community-design-art",
+      "displayName": "Community: Design & Art",
+      "description": "Vetted community skills for game design and content (shared with unity-meta-quest-skills): a five-part XR design reference (comfort, cybersickness, rendering, input, UX, frame budgets), game design document authoring, one-hour prototypes, playtesting, trailer review, and a Blender 5.2 game-asset pipeline (export GLB).",
+      "version": "1.0.0",
+      "author": { "name": "Community authors (curated by Navid Mirzaaghazadeh)" },
+      "homepage": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills/blob/main/THIRD_PARTY_NOTICES.md",
+      "repository": "https://github.com/mirzaaghazadeh/iwsdk-webxr-skills",
+      "license": "MIT AND Apache-2.0",
+      "keywords": ["vr-design", "comfort", "game-design", "playtesting", "blender", "trailer"],
+      "category": "game-development",
+      "source": "./",
+      "strict": false,
+      "skills": [
+        "./skills/community/xr-reference",
+        "./skills/community/xr-perceptual-constraints-displays-and-tracking",
+        "./skills/community/xr-rendering-input-and-spatial-understanding",
+        "./skills/community/xr-platforms-audio-and-comfort",
+        "./skills/community/xr-ux-design-and-performance-budgeting",
+        "./skills/community/game-gdd-author",
+        "./skills/community/prototype-fast",
+        "./skills/community/game-playtest",
+        "./skills/community/review-game-trailer",
+        "./skills/community/scenario-blender-expert",
+        "./skills/community/scenario-blender-retopology",
+        "./skills/community/scenario-blender-uv-baking"
+      ]
+    }
+  ]
+}

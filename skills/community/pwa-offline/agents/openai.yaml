@@ -1,0 +1,4 @@
+interface:
+  display_name: "PWA Offline"
+  short_description: "Design reliable offline behavior and caching"
+  default_prompt: "Use $pwa-offline to design reliable offline, caching, and update behavior for this PWA."

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "metavr": {
+      "command": "npx",
+      "args": ["-y", "metavr", "mcp", "server"]
+    }
+  }
+}
