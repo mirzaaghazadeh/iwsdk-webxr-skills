@@ -5,19 +5,22 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   Tests an IWSDK WebXR app on a physical Meta Quest in Quest Browser: developer
   mode and adb checks, opening the dev server over Wi-Fi or USB (`adb reverse`),
-  the self-signed certificate, remote DevTools through chrome://inspect, device
-  logs and screenshots with metavr, reading the real session frame rate and
-  enabled features, the OVR Metrics Tool performance HUD, and a checklist of
-  what only the headset proves. Use when the user says "test on my Quest",
-  "open it in the headset", "Enter VR button missing", "works in the emulator
-  but not on the Quest", "inspect Quest Browser", "remote debug", "adb reverse",
-  "headset logs", "what FPS is it running at", or before any store build. For
-  scripted pose/input control of a real session, hand off to
-  `iwsdk-native-xr-test`.
+  the self-signed certificate, serving the production build over HTTPS for
+  headset benchmarks, getting benchmark results off the headset without
+  DevTools, remote DevTools through chrome://inspect, device logs and
+  screenshots with metavr, reading the real session frame rate and enabled
+  features, the OVR Metrics Tool performance HUD, and a checklist of what only
+  the headset proves. Use when the user says "test on my Quest", "open it in
+  the headset", "Enter VR button missing", "works in the emulator but not on
+  the Quest", "test the production build on the Quest", "save results from the
+  headset", "kicked out of VR when I save", "inspect Quest Browser", "remote
+  debug", "adb reverse", "headset logs", "what FPS is it running at", or before
+  any store build. For scripted pose/input control of a real session, hand off
+  to `iwsdk-native-xr-test`.
 ---
 
 # Testing an IWSDK app on a Meta Quest
@@ -143,6 +146,84 @@ if (import.meta.env.DEV) {
 Don't assume a default refresh rate: Meta's frame-rate page only gives older-device defaults.
 Read `frameRate`, and see `iwsdk-performance` before calling `updateTargetFrameRate`.
 
+## 4a. Test the production build
+
+Frame-rate and load-time numbers should come from the production build: the dev server serves
+unbundled modules, the HMR client and emulator code. `vite preview` can serve `dist/` over
+HTTPS with the certificate `iwsdkDev()` already made (`.iwsdk/https/_cert.pem` holds both the
+key and the certificate):
+
+```ts
+// vite.config.ts
+import { existsSync, readFileSync } from 'node:fs';
+
+const devCert = '.iwsdk/https/_cert.pem';                 // written by iwsdkDev() on first dev run
+const previewHttps = existsSync(devCert)
+  ? { key: readFileSync(devCert), cert: readFileSync(devCert) }
+  : undefined;
+
+export default defineConfig({
+  // ...existing config
+  preview: { host: '0.0.0.0', port: 8083, https: previewHttps },
+});
+```
+
+```bash
+npm run build && npx vite preview        # then open https://<LAN-IP>:8083/ in Quest Browser
+```
+
+Use a port the dev server doesn't use, and accept the certificate warning once more (new port).
+Checked with IWSDK 1.0.1 on 2026-10-16 from the computer (the HTTPS page and the §4b endpoint
+both answer); opening it in Quest Browser is **unverified**.
+
+## 4b. Get results off the headset without DevTools
+
+A Quest page can't write files, and copying from the remote console is slow. A small Vite plugin
+gives the page a same-origin endpoint that saves JSON (benchmark summaries, per-second perf rows,
+tuning exports) into the repo, on both the dev server and `vite preview`:
+
+```ts
+// vite-plugins/results-sink.ts
+import { mkdirSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import type { Connect, Plugin } from 'vite';
+
+export function resultsSink(root: string): Plugin {
+  const dir = join(root, 'results');
+  const handler: Connect.NextHandleFunction = (req, res) => {
+    const kind = (req.url ?? '').replace(/^\/+/, '').split('?')[0];
+    if (req.method !== 'POST' || !/^[a-z0-9-]{1,40}$/.test(kind)) {
+      res.statusCode = 400;
+      return res.end('expected POST /__results/<kind>');
+    }
+    const chunks: Buffer[] = [];
+    let size = 0;
+    req.on('data', (c: Buffer) => { size += c.length; if (size <= 5 * 1024 * 1024) chunks.push(c); });
+    req.on('end', () => {
+      try {
+        if (size > 5 * 1024 * 1024) throw new Error('payload too large');
+        const body = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+        mkdirSync(dir, { recursive: true });
+        const file = join(dir, `${kind}-${new Date().toISOString().replace(/[:.]/g, '-')}.json`);
+        writeFileSync(file, `${JSON.stringify(body, null, 2)}\n`);
+        res.end(JSON.stringify({ saved: file }));
+      } catch (err) { res.statusCode = 400; res.end(String(err)); }
+    });
+  };
+  return {
+    name: 'results-sink',
+    configureServer: (server) => { server.middlewares.use('/__results/', handler); },
+    configurePreviewServer: (server) => { server.middlewares.use('/__results/', handler); },
+  };
+}
+// vite.config.ts: plugins: [iwsdkDev(), resultsSink(process.cwd())]
+// in the app:     fetch('/__results/bench', { method: 'POST', body: JSON.stringify(summary) })
+```
+
+Add `results/` to `.gitignore`. The endpoint exists only on the dev and preview servers (a
+static host has none), and it accepts writes from anyone who can reach the port, so keep those
+servers on the LAN.
+
 ## 5. Performance HUD
 
 **OVR Metrics Tool** shows FPS and CPU/GPU frame times as an in-headset overlay. Install it from
@@ -175,6 +256,7 @@ whether it attributes Quest Browser WebXR frames usefully is **unverified**.
 | Certificate page every time | Host changed (new IP); accept again, or use route B for a stable `localhost` |
 | IWER toolbar shows on the headset | `dev.emulator.activation` set to `always`, a custom `userAgentException`, or `injectOnBuild: true` |
 | Works in IWER, black screen in headset | Read the console via chrome://inspect; then a full page reload (HMR can leave a stale session) |
+| Dropped out of VR whenever a file is saved | Expected in dev: an edit reloads the page, which ends the XR session (headset and emulator). Batch edits, warn whoever wears the headset, re-enter XR; play-test on `vite preview` (§4a) |
 | Assets missing only on device | Network tab: 404 from a hard-coded `/path` (use `import.meta.env.BASE_URL`), or CORS on a CDN |
 | `device unauthorized` | Re-plug and accept the USB debugging prompt in the headset |
 
@@ -187,5 +269,8 @@ whether it attributes Quest Browser WebXR frames usefully is **unverified**.
 - https://developers.meta.com/horizon/documentation/native/android/mobile-device-setup/ (developer mode; Meta's device setup page)
 - https://github.com/facebook/immersive-web-sdk (1.0.1): `packages/vite-plugin-dev/src/types.ts` (emulator defaults), `packages/core/src/ecs/world.ts` (`session`, `visibilityState`, `onXRFrame`), `packages/cli/src/runtime-state.ts` (`runtimeUrls`)
 - `docs/metavr-cli-reference.md` in this library (`metavr device browser`, `log`, `capture screenshot`, `perf capture`)
+- npm `@iwsdk/vite-plugin-dev@1.0.1` `dist/index.js` (certificate cached in `.iwsdk/https`, written as `_cert.pem`)
+- https://vite.dev/config/preview-options (`preview.https`, `preview.host`, `preview.port`), https://vite.dev/guide/api-plugin (`configureServer`, `configurePreviewServer`)
+- Production preview, results endpoint and the reload-ends-XR behaviour: an IWSDK 1.0.1 VR prototype, 2026-10-16
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17

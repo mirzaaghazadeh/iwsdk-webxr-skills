@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   Sets up a machine and a project for Meta Immersive Web SDK (IWSDK) WebXR
   development with Claude Code: checks Node, maps the game pitch to
@@ -18,7 +18,8 @@ description: >-
   Chromium). Use when starting a new IWSDK or WebXR project, when the user says
   "set up IWSDK", "npm create @iwsdk", "scaffold a WebXR game", "MCP tools
   missing", "iwsdk-runtime not connected", "Node version unsupported", "port
-  8081 in use", "Executable doesn't exist" (Playwright), when cloning a
+  8081 in use", "Executable doesn't exist" (Playwright), "EALLOWSCRIPTS" or
+  "--allow-scripts not allowed" during the scaffold's install, when cloning a
   teammate's IWSDK repo, or when adding IWSDK to an existing Vite app.
 ---
 
@@ -236,6 +237,8 @@ the first `npm install`, what it does:
 | Reference tools say warmup required | `npx @iwsdk/cli reference warmup` |
 | Cryptic errors from `node_modules/.vite/deps/chunk-*.js` after an update | stop the server, `rm -rf node_modules/.vite/deps`, start again (IWSDK troubleshooting page) |
 | "Only pmndrs/uikit components can be added as children" | duplicate Three/UIKit graph; keep the scaffold's `resolve.dedupe` in `vite.config.ts` |
+| Scaffold's install step fails with `EALLOWSCRIPTS` (`--allow-scripts` not allowed in project installs), seen with npm 11.19 | The project is created; install by hand: `npm install`, then `npm install-scripts approve esbuild protobufjs` and `npm install-scripts deny @meta-quest/metavr onnxruntime-node` (the intent of the scaffold's pnpm settings). Denying metavr's script also skips its `~/.metavr` download and shell-profile edit (§9) |
+| Two IWSDK apps on one machine | Both scaffolds use 8081 and the port is strict; give the second app another `server.port` (and use that port on the headset) |
 
 ## Sources
 
@@ -245,5 +248,6 @@ the first `npm install`, what it does:
 - https://iwsdk.dev/ai/getting-started.html, https://iwsdk.dev/ai/modes.html
 - https://iwsdk.dev/skill.md (headless GPU and Playwright notes)
 - https://www.npmjs.com/package/@iwsdk/create (1.0.1, 2026-10-16)
+- `EALLOWSCRIPTS` with npm 11.19 and the `install-scripts` fix: seen while scaffolding an IWSDK 1.0.1 VR prototype, 2026-10-16
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17

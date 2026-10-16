@@ -5,19 +5,21 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   Sets up repeatable automated tests for an IWSDK WebXR app: typecheck and
   build gates, asset checks, a headless smoke test that drives the IWER
   emulator through the `iwsdk` CLI (screenshot, console errors, entity and
   component checks, ECS pause/step/diff, entering XR), scripted interaction
-  tests with emulated controllers, scene-file validation, the opt-in
-  Playwright runner, unit tests for pure game logic, and a GitHub Actions job.
-  Use when the user says "add tests", "regression test", "CI for my WebXR
-  game", "test without a headset", "automate the emulator", "smoke test",
-  "check it still works after my change", or before a release build. For a
-  real headset use `iwsdk-native-xr-test`; for one-off debugging use
-  `iwsdk-debug`.
+  tests with emulated controllers, a test-hook component for arranging
+  scenarios, frame-stepped gameplay videos recorded in the emulator,
+  scene-file validation, the opt-in Playwright runner, unit tests for pure
+  game logic, and a GitHub Actions job. Use when the user says "add tests",
+  "regression test", "CI for my WebXR game", "test without a headset",
+  "automate the emulator", "smoke test", "record a gameplay video", "make a
+  trailer clip without a headset", "check it still works after my change", or
+  before a release build. For a real headset use `iwsdk-native-xr-test`; for
+  one-off debugging use `iwsdk-debug`.
 ---
 
 # Testing IWSDK apps
@@ -86,6 +88,11 @@ don't import `@iwsdk/core`, and let systems call them. Then any unit runner work
 ships none; IWSDK's own packages use Vitest. Ask before `npm i -D vitest`. Creating a full
 `World` in Node is not documented; don't build tests on it.
 
+This scales to physics-like code: a character controller (state machine, jump windows,
+wall-run, slide) behind a small collision interface, backed by simple boxes in tests and
+three-mesh-bvh in the app, ran under Vitest in an IWSDK 1.0.1 prototype. Only one ECS system
+adapts it to the world.
+
 ## 3. Runtime smoke test
 
 `scripts/iwsdk-smoke.sh` (in this skill) starts `dev up --ai-mode agent`, waits for a first
@@ -138,6 +145,45 @@ physics and timing, use the `iwsdk-debug` loop (`ecs pause`, `snapshot`, `step -
 Direct `ecs set-component` is fine to **arrange** a scenario, but it is not proof that the user's
 input path works.
 
+**CLI gotchas** (1.0.1):
+
+- `xr look-at` needs `target` as an object, `{"x":0,"y":1.5,"z":-2}`. An array doesn't move
+  the controller and doesn't give a clear error.
+- Every CLI call costs about 0.3 s (process start), so a script that holds a stick and presses
+  a button "at the right moment" is only accurate to a few hundred ms. Start the player close to
+  the edge you test, or pause the ECS and step (§4a) for exact timing.
+- A code edit reloads the page and ends the emulated XR session; run `xr enter` again before
+  the next XR command.
+
+**A test-hook component** makes scenarios quick to arrange: one dev component with plain fields
+(`x`, `y`, `z`, `yawDeg`, `teleport`, `restart`, `setting`, `value`, `apply`) and a system
+that acts when a trigger flag turns true, then clears it. `ecs set-component` writes one field
+per call, so write the data fields first and the trigger flag last. Register the component in
+`src/components.ts` like any other.
+
+### 4a. Record a gameplay video in the emulator
+
+The emulator can't record real-time video, but pausing the ECS and stepping a fixed delta gives
+a smooth, repeatable one. Each frame:
+
+1. read state: `ecs query` on the player entity;
+2. decide input (a small bot: jump when past an edge, slide at a marker) and send it with
+   `xr set-gamepad-state` (a button press = down before the step, up after it);
+3. `ecs step --input-json '{"count":1,"delta":0.0333333}'`;
+4. `browser screenshot --output-file frames/0001.png`.
+
+Then: `ffmpeg -framerate 30 -i frames/%04d.png -c:v libx264 -pix_fmt yuv420p -crf 18 out.mp4`.
+
+- It only works if systems use the `delta` passed to `update()` (movement, timers, animation),
+  not `performance.now()`.
+- The run is deterministic: do a dry run without screenshots first (about two CLI calls per
+  frame) to check the route, then record.
+- Cost on a laptop: about 1.2 s per frame with screenshots, so 10 s of video at 30 fps takes
+  about 7 minutes. Agent mode frames are 800 × 800.
+- Hide dev overlays first and restore them after. The video is smooth by construction, so it
+  shows look and moves, never real-time performance. Say so wherever it's shared.
+- Measured in an IWSDK 1.0.1 prototype, 2026-10-17.
+
 ## 5. Advanced: the Playwright runner
 
 For assertions the CLI can't express (DOM overlays, CDP metrics), IWSDK has an opt-in runner:
@@ -168,5 +214,7 @@ commands with a `runtimeTarget`). Manual checklist: **`iwsdk-quest-device-testin
 - https://iwsdk.dev/ai/workflows.html (runtime-first workflows, Playwright runner)
 - https://iwsdk.dev/ai/mcp-tools.html
 - https://iwsdk.dev/skill.md (device names, gamepad indices, verification workflow)
+- `npx @iwsdk/cli ecs step --help` (1.0.1: `count` 1-120, fixed `delta`, requires `ecs pause`)
+- Test-hook component, CLI timing, `xr look-at` target shape, frame-stepped recording and the Vitest controller: an IWSDK 1.0.1 VR prototype, 2026-10-16/17
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17

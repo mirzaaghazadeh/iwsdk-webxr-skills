@@ -134,7 +134,7 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 | `iwsdk-ui` | IWSDK | UIKitML spatial panels and HUDs with preview and runtime checks |
 | `iwsdk-physics` | IWSDK | Rigid bodies, collisions, forces, physics-aware grabbing |
 | `iwsdk-depth-occlusion` | IWSDK | Depth sensing and real-world occlusion in AR |
-| `iwsdk-asset-pipeline` | **original** | What IWSDK can load (Draco and KTX2 yes, Meshopt no), FBX/OBJ → GLB, `gltf-transform`, KTX2, HDR, audio; with a GLB checker script |
+| `iwsdk-asset-pipeline` | **original** | What IWSDK can load (manifest: Draco and KTX2 yes, Meshopt no; own loader: Meshopt and local decoders), FBX/OBJ → GLB, `gltf-transform` and its scripting traps, KTX2, HDR, audio, asset licences; with a GLB checker script |
 | `pmndrs-uikit`, `pmndrs-pointer-events`, `pmndrs-handle` | community (pmndrs) | Low-level references for the libraries under IWSDK's UI, pointers and grabbing. Use IWSDK's skills first |
 | `hz-iwsdk-webxr` | Meta | Meta's IWSDK overview. **Written for IWSDK 0.4**: see [ERRATA](skills/meta-official/ERRATA.md) |
 
@@ -144,8 +144,8 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 |---|---|---|
 | `iwsdk-grab`, `iwsdk-ray` | IWSDK | Prove grab, ray, UI clicks and distance grabbing with emulated controllers |
 | `iwsdk-debug` | IWSDK | ECS pause/query/snapshot/step/diff loops for state, physics and interaction bugs |
-| `iwsdk-testing` | **original** | Typecheck and build gates, asset checks, headless IWER smoke test, CI; with a smoke-test script |
-| `iwsdk-quest-device-testing` | **original** | Open the app on a Quest (Wi-Fi or `adb reverse`), certificates, remote DevTools, device logs |
+| `iwsdk-testing` | **original** | Typecheck and build gates, asset checks, headless IWER smoke test, test-hook component, frame-stepped gameplay video, CI; with a smoke-test script |
+| `iwsdk-quest-device-testing` | **original** | Open the app on a Quest (Wi-Fi or `adb reverse`), certificates, production build over HTTPS, saving results from the headset, remote DevTools, device logs |
 | `iwsdk-native-xr-test` | IWSDK | Script a real Quest immersive session through the IWSDK CLI |
 | `hz-vr-debug` | Meta | Logs, screenshots and video from the headset |
 | `webapp-testing` | community (Anthropic) | Playwright smoke tests for 2D pages |
@@ -155,7 +155,7 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 
 | Skill | Source | Use it for |
 |---|---|---|
-| `iwsdk-performance` | **original** | Meta's WebXR performance workflow for IWSDK: frame budgets, CPU/GPU bound tests, draw calls, textures, foveation, refresh rate; plus a table of outdated advice |
+| `iwsdk-performance` | **original** | Meta's WebXR performance workflow for IWSDK: frame budgets, CPU/GPU bound tests, frame-time logging that lines up with OVR Metrics, draw calls, crowds of animated characters, textures, foveation, refresh rate, locomotion input delay; plus a table of outdated advice |
 | `hz-perfetto-debug`, `hz-simpleperf-debug` | Meta | GPU/CPU traces and CPU hotspots on the headset |
 | `threejs-perf-loading` | community (vladmdgolam) | Shader-compile stutter, adaptive quality, slow-frame hunting (ideas; IWSDK renders with WebGL) |
 
@@ -200,8 +200,13 @@ MCP details and config: [mcp/README.md](mcp/README.md).
   while Meta asks new apps for API 34 and immersive apps for `required="true"`. Meta doesn't say
   whether PWAs are exempt, so the release pipeline treats the first ALPHA upload's test result as
   the answer.
-- **IWSDK can't decode Meshopt**, but `gltf-transform optimize` uses Meshopt by default. Use the
-  flags in `iwsdk-asset-pipeline`.
+- **IWSDK's asset manager can't decode Meshopt**, but `gltf-transform optimize` uses Meshopt by
+  default. Use the flags in `iwsdk-asset-pipeline`, or load code-placed art with your own
+  `GLTFLoader` + `MeshoptDecoder` and local decoders (same skill, §1a).
+- **Built-in locomotion is a comfort-walking engine.** It reads input one frame late, has hidden
+  rules (gravity ×3 above 10 m, reset above 100 m, 20 m/s cap) and no velocity API, and IWSDK
+  physics has no raycasts. Fast action games need their own controller. See
+  `skills/iwsdk-official/ERRATA.md`.
 - **Side effects of a scaffold:** `npm install` runs `@meta-quest/metavr`'s postinstall (a binary
   in `~/.metavr` and a completions line in your shell profile; `METAVR_SKIP_DOWNLOAD=1` avoids it),
   and the IWSDK CLI sends tool-call telemetry through metavr. `iwsdk-project-setup` explains both.

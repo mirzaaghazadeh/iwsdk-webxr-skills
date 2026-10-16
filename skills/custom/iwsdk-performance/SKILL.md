@@ -5,19 +5,23 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.0.0"
+  version: "1.1.0"
 description: >-
   Finds and fixes frame-rate and load-time problems in IWSDK WebXR apps on Meta
   Quest Browser, using Meta's WebXR performance workflow: frame budgets, CPU vs
-  GPU vs vertex vs fragment bound tests, draw calls and instancing, triangles,
-  textures, lights and shadows, fixed foveation (`renderer.xr.setFoveation`,
-  default 1.0), framebuffer scale, target frame rate (`supportedFrameRates`,
-  `updateTargetFrameRate`), multiview (already on), WebXR quad/cylinder layers,
-  IWSDK feature flags that cost CPU or bundle size, and bundle/loading checks.
-  Every number is sourced. Use when the user says "it stutters on the Quest",
-  "low FPS", "frame drops", "optimize for Quest", "too many draw calls", "GPU
-  bound", "foveation", "run at 90 Hz", "framebuffer scale", "slow to load",
-  "bundle too big", or before a store build.
+  GPU vs vertex vs fragment bound tests, frame-time logging comparable with OVR
+  Metrics (percentiles, hitches, CPU and GPU work time), draw calls and
+  instancing, many animated characters (animation LOD, vertex animation
+  textures), triangles, textures, lights and shadows, fixed foveation
+  (`renderer.xr.setFoveation`, default 1.0), framebuffer scale, target frame
+  rate (`supportedFrameRates`, `updateTargetFrameRate`), multiview (already on),
+  WebXR quad/cylinder layers, IWSDK feature flags that cost CPU or bundle size,
+  built-in locomotion input latency, and bundle/loading checks. Every number is
+  sourced. Use when the user says "it stutters on the Quest", "low FPS", "frame
+  drops", "hitches", "optimize for Quest", "too many draw calls", "GPU bound",
+  "foveation", "run at 90 Hz", "framebuffer scale", "input lag", "crowd of
+  enemies", "benchmark", "slow to load", "bundle too big", or before a store
+  build.
 ---
 
 # IWSDK performance on Meta Quest
@@ -33,6 +37,19 @@ on the device lives in **`iwsdk-quest-device-testing`**.
 - **Only headset numbers count.** `browser_profile` results are labelled
   `host-browser-diagnostic`, `calibrated: false`. A headless SwiftShader browser runs about 10x
   slower than real. Use them for CPU long tasks and load time, never for frame rate.
+- **Emulator runs pretend to be a Quest.** IWER redefines `navigator.userAgent` as an own
+  property with a Quest Browser string (`iwer` 2.6.0 `lib/device/XRDevice.js`), so a
+  user-agent check labels emulator numbers as headset numbers. Read the real one from the
+  prototype and tag every logged row:
+  ```ts
+  const nav = navigator;
+  const spoofed = Object.getOwnPropertyDescriptor(nav, 'userAgent') !== undefined;   // IWER
+  const realUa = Object.getOwnPropertyDescriptor(Object.getPrototypeOf(nav), 'userAgent')?.get?.call(nav) ?? '';
+  const platform = !spoofed && /OculusBrowser/.test(String(realUa)) ? 'quest' : 'emulator';
+  ```
+- The headless agent browser (`--ai-mode agent`) rendered at about 60 Hz while IWER reported
+  a 90 Hz session in an IWSDK 1.0.1 prototype, so "frames over budget" read 100 % there. Label
+  emulator rows "not valid for performance" and don't read them.
 - Keep a baseline (FPS, CPU and GPU frame time from OVR Metrics Tool, plus draw calls and
   triangles from `world.renderer.info`) in the heaviest scene, and compare after every change.
 - Don't trade away required gameplay or legibility for a count. Ask before removing content.
@@ -81,6 +98,27 @@ console.log('multiview:', world.renderer.xr.isMultiview, 'foveation:', world.ren
   (triangles, visible nodes) for the editor render; use it to spot heavy assets early.
 - Load: `npm run build` then `find dist/assets -maxdepth 1 -type f -exec du -h {} + | sort -h`.
 
+### Frame-time logging that lines up with OVR Metrics
+
+Averages hide stutter. For pass/fail decisions log percentiles and hitches, one row per second
+with a wall-clock ISO timestamp, so the rows line up with an OVR Metrics CSV recorded at the
+same time.
+
+- **Frame interval:** from consecutive XR frame timestamps (`world.onXRFrame` delta). This is
+  what the compositor got; compare it with OVR Metrics FPS and stale frames. Report avg, p50,
+  p95, p99, max, % of frames over the budget, and frames over 33 ms (hitches).
+- **CPU work:** time spent in `world.update` plus render submission. One way is to wrap
+  `world.renderer.render` and time it together with a system at the lowest and highest
+  priority.
+- **GPU work:** `EXT_disjoint_timer_query_webgl2` around the frame's render. Check
+  `gl.getParameter(ext.GPU_DISJOINT_EXT)` before using a result. Whether Quest Browser exposes
+  the extension is **unverified**; fall back to OVR Metrics' GPU time.
+- **Judge headroom on work time, not on the interval.** With vsync the interval averages the
+  full budget whenever the app keeps up, so "average 13.9 ms at 72 Hz" says nothing about
+  spare time. Use max(CPU, GPU) per frame, which is what OVR Metrics' app CPU and GPU times
+  show.
+- Get the rows off the headset: see `iwsdk-quest-device-testing` §4b.
+
 ## 3. Find the bottleneck (Meta's WebXR workflow)
 
 1. **CPU or GPU?** Stop drawing content and compare frame time. In IWSDK a dev toggle such as
@@ -108,11 +146,36 @@ console.log('multiview:', world.renderer.xr.isMultiview, 'foveation:', world.ren
 - **React, don't poll**: `queries.x.subscribe('qualify', ...)` instead of per-frame checks.
 - **Lower update rates** for non-critical work: animate distant objects every few frames, split a
   large set into three and update one per frame (Meta best practices).
+- **Many animated characters.** Two patterns, both built and compared in an IWSDK 1.0.1
+  prototype (IWER emulator, so draw calls only; frame times **unverified on Quest**):
+  - *Pooled `SkinnedMesh`*: clone with `SkeletonUtils.clone`, share clips and one material,
+    update each `AnimationMixer` at a rate that falls with distance (every frame near, 30 Hz
+    mid, 15 Hz far) and freeze characters outside the view cone. Simple; one draw call per
+    character; mixer CPU grows with the count.
+  - *Vertex animation texture (VAT)*: at load, bake every clip's skinned vertex positions
+    (plus a normal component) into a half-float `DataTexture`, then draw all characters with
+    one `InstancedMesh` whose `ShaderMaterial` reads the texture with `texelFetch` by
+    `gl_VertexID` and a per-instance clip/time attribute. One draw call for the whole crowd and
+    almost no animation CPU. Costs: bake time and memory (a 3k-triangle character with 7 clips
+    at 30 fps took 83 ms and 11 MB), no cross-fade between clips unless the shader samples two,
+    and a hand-written shader
+    whose multiview behaviour is unverified (§4 Multiview).
+  - Measured at 25 characters: 62 draw calls (pooled skinned) vs 38 (VAT) for the whole frame,
+    including level, UI and controllers.
 - **Turn off unused features** in `iwsdk.config.json`: `physics: false` removes Havok (JS + WASM)
   from the build; `locomotion: false` when stationary; `sceneUnderstanding`/`environmentRaycast`
   off when not used.
-- Physics and locomotion already run in Web Workers by default (`useWorker: true`, 60 Hz).
-  Keep it. Raise `updateFrequency` only for a measured need.
+- Physics runs in a Web Worker by default (`useWorker: true`, 60 Hz). Keep it, and raise
+  `features.physics.updateFrequency` only for a measured need. `updateFrequency` is a
+  **physics-only** key: 1.0.1's locomotion accepts `useWorker`, `initialPlayerPosition`,
+  `comfortAssistLevel`, `turningMethod`, `enableJumping` and `browserControls`
+  (`packages/core/src/project/validation.ts`).
+- **Built-in locomotion acts one frame late.** `LocomotionSystem` is registered at priority −5
+  and `InputSystem` at −4, so locomotion reads the previous frame's controller state, although
+  the source comment says "InputSystem => LocomotionSystem" (`src/init/world-initializer.ts`).
+  An IWSDK 1.0.1 prototype measured 1 frame of input-to-motion delay with `useWorker` on and
+  off; a custom controller in a system after −4 measured 0. Fine for comfort walking; worth
+  measuring for fast action games.
 
 ### Vertex bound
 
@@ -179,7 +242,17 @@ if (rates.includes(90)) await s.updateTargetFrameRate?.(90);   // only after mea
   keeps families that load dynamically.
 - Runtime CDN fetches on first load: Draco/Basis decoders from `unpkg.com`, controller models
   from `cdn.jsdelivr.net` (`@webxr-input-profiles/assets`). Expect that latency; allow both
-  hosts in any CSP.
+  hosts in any CSP. To remove them: load art with your own loader and local decoders
+  (`iwsdk-asset-pipeline` §1a). For controller models, copy the profile GLBs you support under
+  `public/` and wrap `AssetManager.loadGLTF` before `World.create` to rewrite the jsDelivr
+  prefix. That monkeypatches a static, because 1.0.1 has no option for it; it worked in the
+  emulator in an IWSDK 1.0.1 prototype and is **unverified on a Quest**.
+- Size reference: a small IWSDK 1.0.1 game (UIKitML panels, no physics, own controller)
+  built to a 6.6 MB main chunk (1.7 MB gzip), plus a 0.46 MB MSDF text worker and a 0.42 MB
+  bundled font (prototype build, 2026-10-16). Most of it is the SDK, so expect a similar floor.
+- **Measure the production build on the headset, not the dev server.** The dev server serves
+  unbundled modules plus HMR and emulator code. `vite build && vite preview` over HTTPS:
+  `iwsdk-quest-device-testing` §4a.
 - Desktop load profiling (Lighthouse can't compute LCP/TTI for a canvas-only page; launch
   headless Chromium with a hardware ANGLE backend): Meta's `hz-iwsdk-webxr` skill,
   `references/desktop-load-profiling.md`.
@@ -193,6 +266,7 @@ don't exist or don't apply to IWSDK 1.x. Details and sources:
 ## Checklist before a store build
 
 - [ ] Heaviest scene holds the target rate in OVR Metrics Tool for 5+ minutes; never long below 60 fps
+- [ ] Measured on the production build (`vite preview`), with p99 and hitch counts, not only averages
 - [ ] Refresh rate is one of the allowed values; framebuffer scale ≥ 0.85
 - [ ] Draw calls and triangles recorded and within the Meta numbers above for the device class
 - [ ] Unused features off in `iwsdk.config.json`; `physics: false` if no rigid bodies
@@ -211,6 +285,9 @@ don't exist or don't apply to IWSDK 1.x. Details and sources:
 - https://developers.meta.com/horizon/resources/vrc-quest-performance-1/ (≥ 60 fps, allowed refresh rates; 2025-10-22), https://developers.meta.com/horizon/resources/vrc-quest-performance-4/ (≥ 85% render scaling; 2024-07-31)
 - https://developers.meta.com/horizon/documentation/unity/unity-perf/ (native ranges by app type)
 - https://unpkg.com/super-three@0.181.0/src/renderers/webxr/WebXRManager.js (foveation default 1.0, framebuffer scale before session, projection layer + `OCULUS_multiview`)
-- https://github.com/facebook/immersive-web-sdk (1.0.1): `packages/core/src/init/world-initializer.ts` (`multiviewStereo: true`), `src/init/xr.ts` (default `layers` offer), `src/asset/loaders/gltf-loader.ts`, `packages/xr-input/src/gamepad/input-profiles.ts`, `docs/guides/08-build-deploy.md`, `docs/concepts/locomotion/performance.md`, `examples/layers/`
+- https://github.com/facebook/immersive-web-sdk (1.0.1): `packages/core/src/init/world-initializer.ts` (`multiviewStereo: true`; `LocomotionSystem` priority −5, `InputSystem` −4), `src/project/validation.ts` (physics and locomotion keys), `src/init/xr.ts` (default `layers` offer), `src/asset/loaders/gltf-loader.ts`, `packages/xr-input/src/gamepad/input-profiles.ts`, `docs/guides/08-build-deploy.md`, `docs/concepts/locomotion/performance.md`, `examples/layers/`
+- npm `iwer@2.6.0`, `lib/device/XRDevice.js` (`Object.defineProperty(navigator, 'userAgent', …)`)
+- https://registry.khronos.org/webgl/extensions/EXT_disjoint_timer_query_webgl2/ (GPU timer queries, `GPU_DISJOINT_EXT`)
+- Crowd rendering, input-delay measurements, emulator frame rate and bundle sizes: an IWSDK 1.0.1 VR prototype, IWER emulator and production build, 2026-10-16 (headset numbers pending)
 
-Last verified: 2026-10-16
+Last verified: 2026-10-17
