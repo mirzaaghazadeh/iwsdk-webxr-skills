@@ -5,17 +5,19 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.2.0"
+  version: "1.3.0"
 description: >-
   Sets up repeatable automated tests for an IWSDK WebXR app: typecheck and
   build gates, asset checks, a headless smoke test that drives the IWER
   emulator through the `iwsdk` CLI (screenshot, console errors, entity and
   component checks, ECS pause/step/diff, entering XR), scripted interaction
   tests with emulated controllers, hands and Meta VR Glasses gaze + pinch,
-  a test-hook component for arranging
-  scenarios, frame-stepped gameplay videos recorded in the emulator,
-  scene-file validation, the opt-in Playwright runner, unit tests for pure
-  game logic, and a GitHub Actions job. Use when the user says "add tests",
+  a test-hook component for arranging scenarios and fast-forwarding time,
+  a TypeScript end-to-end suite under Vitest, bot players that finish the
+  game with real emulated input, frame-stepped gameplay videos recorded in
+  the emulator, scene-file validation, a production-build smoke test, the
+  opt-in Playwright runner, unit tests for pure game logic, and a GitHub
+  Actions job. Use when the user says "add tests",
   "regression test", "CI for my WebXR game", "test without a headset",
   "automate the emulator", "smoke test", "record a gameplay video", "make a
   trailer clip without a headset", "check it still works after my change", or
@@ -166,17 +168,81 @@ hold-move-release grab use `xr set-select-value` on the hand (IWSDK gaze docs).
 
 - `xr look-at` needs `target` as an object, `{"x":0,"y":1.5,"z":-2}`. An array doesn't move
   the controller and doesn't give a clear error.
-- Every CLI call costs about 0.3 s (process start), so a script that holds a stick and presses
-  a button "at the right moment" is only accurate to a few hundred ms. Start the player close to
-  the edge you test, or pause the ECS and step (§4a) for exact timing.
+- Every `npx @iwsdk/cli` call costs about 0.3 s (process start). Calling the project's binary,
+  `./node_modules/.bin/iwsdk`, directly took about 0.1 s per call (measured 2026-10-23), which
+  matters in suites that make thousands of calls. Either way a script that holds a stick and
+  presses a button "at the right moment" is only accurate to a few hundred ms. Start the player
+  close to the edge you test, or pause the ECS and step (§4a) for exact timing.
 - A code edit reloads the page and ends the emulated XR session; run `xr enter` again before
   the next XR command.
+- **A hang looks like a lost connection.** An endless loop in game code logs nothing: `dev
+  status` shows `browserIssue.cause: "connection_lost"`, and neither `browser reload` nor
+  `runtime recover` brings it back while the page keeps hanging. Fix the loop, then `dev
+  restart`. A typical culprit: `while (count < target) void addAsync()` where `count` only
+  grows after an `await`.
+- **`scene render-stats` fails during an emulated XR session** with `Cannot read properties of
+  undefined (reading 'x')` (1.0.1; it works outside XR). Its bounds pass appears to trip over the
+  emulated controller models. For a draw-call budget, copy `world.renderer.info.render.calls`
+  and `.triangles` into a test component each frame and read them with `ecs query`.
+- **Console noise from reloads.** The emulated controllers fetch their models from jsDelivr;
+  reloading or switching input mode mid-fetch logs `net::ERR_ABORTED` errors. Filter those
+  before failing a test on console errors.
+- **Counts race with things the game spawns on its own.** "Pieces = before + 1" fails when
+  the game adds one of its own at the same moment. Wait for the specific entity (index) to
+  change state, or assert a relation that holds either way. To decide that state has settled,
+  compare two readings taken seconds apart: a poll helper that checks before its first sleep
+  compares readings a fraction of a second apart.
+- **Freezing game time doesn't stop work already in flight.** A hit-test probe or an async
+  spawn started before a `timeScale = 0` hook still completes.
 
 **A test-hook component** makes scenarios quick to arrange: one dev component with plain fields
 (`x`, `y`, `z`, `yawDeg`, `teleport`, `restart`, `setting`, `value`, `apply`) and a system
 that acts when a trigger flag turns true, then clears it. `ecs set-component` writes one field
 per call, so write the data fields first and the trigger flag last. Register the component in
 `src/components.ts` like any other.
+
+Three more fields on the same component paid off in an IWSDK 1.0.1 game:
+
+- **A `command` string** the system reads each frame and clears: `reset`, `stars:20`,
+  `derail` and so on. For `reset`, stop saving first, then clear storage and call
+  `location.reload()`. A `pagehide` save handler would otherwise write the old state back.
+- **A `timeScale` number** multiplied into the game's own `delta`: 8× turns minutes of play
+  into seconds. Keep input steering on real frame time so carrying still works at 0×.
+- **Mirrored counters** (score, entity counts, "game over", the current hint as a string),
+  copied into the component when they change, so assertions are one `ecs query`.
+
+### 4b. A TypeScript end-to-end suite
+
+Past a handful of scenarios, shell blocks get hard to maintain. A small TypeScript harness
+under Vitest worked well (measured: 21 scenarios, about 6 minutes against a live 1.0.1
+emulator). Use a separate config so `npm test` stays fast:
+
+```ts
+// vitest.e2e.config.ts
+export default defineConfig({ test: { include: ['e2e/**/*.e2e.ts'], fileParallelism: false, testTimeout: 180_000, hookTimeout: 180_000 } });
+
+// e2e/harness.ts: one CLI call, parsed
+const BIN = fileURLToPath(new URL('../node_modules/.bin/iwsdk', import.meta.url));
+export function cli(command: string, input?: unknown): any {
+  const args = command.split(' ');
+  if (input !== undefined) args.push('--input-json', JSON.stringify(input));
+  const out = execFileSync(BIN, args, { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }); // throws on exit 1
+  const json = JSON.parse(out);
+  return json.data?.result ?? json.data;
+}
+// …plus waitFor(what, check, timeoutMs) that treats a CLI error during a reload as "not yet".
+```
+
+Keep scenario helpers (where to stand, how to grab and aim, game-frame ↔ world transforms) in
+one module and import the game's pure modules into the tests. Expected positions then come from
+the same code the game uses, not from hand-copied numbers.
+
+**A bot player** proves a game can be finished, not just that its parts work. Expose what a
+player would act on (the next hinted move, the goal) through the test-hook component, then loop:
+read it, perform it with real emulated input (grab, aim, release), and assert the end state.
+In one train-set game, the bot played a whole session to "complete" with tracked hands, and on
+the way it found a placement that left a goal unreachable, which no single-scenario test had
+caught.
 
 ### 4a. Record a gameplay video in the emulator
 
@@ -214,6 +280,14 @@ The module must live inside the workspace and return JSON up to 1 MiB. While ena
 process that can reach the loopback CDP endpoint has browser-level control of that session. Ask
 the user, review the script, and don't enable it in ordinary sessions.
 
+**Smoke-test the production build too.** The emulator suites run against the dev server, so
+also serve `dist/` with `vite preview` and load it once in headless Chromium through Playwright
+(a dependency of `@iwsdk/cli`). Fail on any console error or `pageerror`, and check that the
+manifest URL returns 200. Playwright's `chromium_headless_shell` may not be downloaded, but the
+IWSDK CLI's managed browser is: on macOS, launch with `executablePath` set to
+`~/Library/Caches/ms-playwright/chromium-<n>/chrome-mac-arm64/Google Chrome for Testing.app/Contents/MacOS/Google Chrome for Testing`
+instead of downloading another browser (ask before `npx playwright install`).
+
 ## 6. Continuous integration
 
 A GitHub Actions job (Linux, no GPU, so the managed browser uses SwiftShader: fine for
@@ -234,5 +308,6 @@ commands with a `runtimeTarget`). Manual checklist: **`iwsdk-quest-device-testin
 - `npx @iwsdk/cli ecs step --help` (1.0.1: `count` 1-120, fixed `delta`, requires `ecs pause`)
 - Test-hook component, CLI timing, `xr look-at` target shape, frame-stepped recording and the Vitest controller: an IWSDK 1.0.1 VR prototype, 2026-10-16/17
 - Gaze automation: IWSDK 1.0.1 `docs/concepts/xr-input/gaze.md` ("Drive tests from the CLI"), https://developers.meta.com/horizon/documentation/iwsdk/guides/02-testing-experience/ ("Automate gaze and pinch", 2026-09-04)
+- CLI timing with the project binary, the hang, `render-stats` and `ERR_ABORTED` behaviour, count races, the `command`/`timeScale`/mirrored-counter hooks, the Vitest suite, the bot player and the production smoke: an IWSDK 1.0.1 MR train-set game, 2026-10-23 (observed, not from IWSDK docs)
 
-Last verified: 2026-10-17
+Last verified: 2026-10-23

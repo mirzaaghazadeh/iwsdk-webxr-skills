@@ -111,6 +111,17 @@ yet (1.0.1 copies). Use `../custom/iwsdk-vr-glasses`.
 - **Every edit ends the XR session.** A source or config change reloads the page (observed in
   the emulator with 1.0.1), and a reload ends any XR session, a headset's included. Re-enter XR
   after each edit (`xr enter` for agents) and warn whoever is wearing the headset.
+- **A distance grab moves with the hand, not to where the ray points.** With
+  `DistanceGrabbable` and `MovementMode.MoveAtSource`, the held object follows the hand's own
+  movement, so a player who keeps the hand still and points somewhere else sees the object
+  barely move. A playtester on a Quest 3S reported exactly this when placing game pieces on a
+  table (2026-10-23). For putting things down on a surface, keep `DistanceGrabbable` for the
+  pinch but set `translate: false, rotate: false`, then steer the held object yourself each frame
+  where `world.player.raySpaces[hand]` meets the surface. `GrabSystem.getHolderHand(entity)`
+  (`packages/core/src/grab/grab-system.ts`) still names the holding hand with both switched off
+  (observed in the emulator, 1.0.1). To turn the held object by twisting the wrist, measure the
+  hand's roll about its ray against the vertical plane through the ray. The "twist" half of a
+  swing–twist split also picks up sideways aiming, and the object spins while the player aims.
 - **UIKit's bundled font lacks some glyphs**, for example superscript "²", which don't render.
   Keep panel text to plain ASCII (the `iwsdk-ui` skill only mentions punctuation).
 - **`npm install` edits your shell profile.** `@meta-quest/metavr@1.8.1`'s postinstall downloads

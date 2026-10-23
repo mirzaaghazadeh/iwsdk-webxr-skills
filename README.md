@@ -146,7 +146,7 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 |---|---|---|
 | `iwsdk-grab`, `iwsdk-ray` | IWSDK | Prove grab, ray, UI clicks and distance grabbing with emulated controllers |
 | `iwsdk-debug` | IWSDK | ECS pause/query/snapshot/step/diff loops for state, physics and interaction bugs |
-| `iwsdk-testing` | **original** | Typecheck and build gates, asset checks, headless IWER smoke test, test-hook component, frame-stepped gameplay video, CI; with a smoke-test script |
+| `iwsdk-testing` | **original** | Typecheck and build gates, asset checks, headless IWER smoke test, test-hook component, TypeScript e2e suite with bot players, production-build smoke, frame-stepped gameplay video, CI; with a smoke-test script |
 | `iwsdk-quest-device-testing` | **original** | Open the app on a Quest (Wi-Fi or `adb reverse`), certificates, production build over HTTPS, saving results from the headset, remote DevTools, device logs |
 | `iwsdk-native-xr-test` | IWSDK | Script a real Quest immersive session through the IWSDK CLI |
 | `hz-vr-debug` | Meta | Logs, screenshots and video from the headset |
