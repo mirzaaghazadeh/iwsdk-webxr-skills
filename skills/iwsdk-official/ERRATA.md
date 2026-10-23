@@ -111,6 +111,28 @@ yet (1.0.1 copies). Use `../custom/iwsdk-vr-glasses`.
 - **Every edit ends the XR session.** A source or config change reloads the page (observed in
   the emulator with 1.0.1), and a reload ends any XR session, a headset's included. Re-enter XR
   after each edit (`xr enter` for agents) and warn whoever is wearing the headset.
+- **A distance grab moves with the hand, not to where the ray points.** With
+  `DistanceGrabbable` and `MovementMode.MoveAtSource`, the held object follows the hand's own
+  movement, so a player who keeps the hand still and points somewhere else sees the object
+  barely move. A playtester on a Quest 3S reported exactly this when placing game pieces on a
+  table (2026-10-23). For putting things down on a surface, keep `DistanceGrabbable` for the
+  pinch but set `translate: false, rotate: false`, then steer the held object yourself each frame
+  where `world.player.raySpaces[hand]` meets the surface. `GrabSystem.getHolderHand(entity)`
+  (`packages/core/src/grab/grab-system.ts`) still names the holding hand with both switched off
+  (observed in the emulator, 1.0.1). To turn the held object by twisting the wrist, measure the
+  hand's roll about its ray against the vertical plane through the ray. The "twist" half of a
+  swing–twist split also picks up sideways aiming, and the object spins while the player aims.
+- **A button that removes itself on press breaks the next press.** `InputSystem`
+  (`packages/core/src/input/input-system.ts`) adds `Pressed` on `pointerdown` and removes it on
+  `pointerup`. The usual pattern, acting in a `Pressed` qualify subscription, runs on the *down*.
+  If that action disposes the pressed entity (closing a menu, swapping one card of buttons for
+  another), the next button still lights up under the ray (`Hovered` appears) but the next pinch
+  adds no `Pressed` and does nothing. Observed in the emulator with 1.0.1 and emulated hands on
+  every menu → level → menu round trip (2026-10-23). The cause wasn't traced; the pointer probably
+  keeps its capture on the removed object. Acting on release fixed it (4 of 4 runs, after
+  alternating failures). Use a `Pressed` *disqualify* subscription, act only if the entity
+  still has `Hovered` (so sliding off cancels), and run the action on the next frame, outside the
+  pointer event. Players expect buttons to act on release anyway.
 - **UIKit's bundled font lacks some glyphs**, for example superscript "²", which don't render.
   Keep panel text to plain ASCII (the `iwsdk-ui` skill only mentions punctuation).
 - **`npm install` edits your shell profile.** `@meta-quest/metavr@1.8.1`'s postinstall downloads
