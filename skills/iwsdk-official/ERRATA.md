@@ -122,6 +122,17 @@ yet (1.0.1 copies). Use `../custom/iwsdk-vr-glasses`.
   (observed in the emulator, 1.0.1). To turn the held object by twisting the wrist, measure the
   hand's roll about its ray against the vertical plane through the ray. The "twist" half of a
   swing–twist split also picks up sideways aiming, and the object spins while the player aims.
+- **A button that removes itself on press breaks the next press.** `InputSystem`
+  (`packages/core/src/input/input-system.ts`) adds `Pressed` on `pointerdown` and removes it on
+  `pointerup`. The usual pattern, acting in a `Pressed` qualify subscription, runs on the *down*.
+  If that action disposes the pressed entity (closing a menu, swapping one card of buttons for
+  another), the next button still lights up under the ray (`Hovered` appears) but the next pinch
+  adds no `Pressed` and does nothing. Observed in the emulator with 1.0.1 and emulated hands on
+  every menu → level → menu round trip (2026-10-23). The cause wasn't traced; the pointer probably
+  keeps its capture on the removed object. Acting on release fixed it (4 of 4 runs, after
+  alternating failures). Use a `Pressed` *disqualify* subscription, act only if the entity
+  still has `Hovered` (so sliding off cancels), and run the action on the next frame, outside the
+  pointer event. Players expect buttons to act on release anyway.
 - **UIKit's bundled font lacks some glyphs**, for example superscript "²", which don't render.
   Keep panel text to plain ASCII (the `iwsdk-ui` skill only mentions punctuation).
 - **`npm install` edits your shell profile.** `@meta-quest/metavr@1.8.1`'s postinstall downloads

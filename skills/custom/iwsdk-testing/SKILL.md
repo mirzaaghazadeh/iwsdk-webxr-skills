@@ -194,6 +194,11 @@ hold-move-release grab use `xr set-select-value` on the hand (IWSDK gaze docs).
   compares readings a fraction of a second apart.
 - **Freezing game time doesn't stop work already in flight.** A hit-test probe or an async
   spawn started before a `timeScale = 0` hook still completes.
+- **Press a button only once the ray is on it.** After aiming, poll for `Hovered` on the
+  target entity before pinching. If it never comes, fail with the list of entities that do
+  have `Hovered`: that tells "aimed wrong" apart from "the press was lost". A test that alternates
+  pass/fail on the same press is worth reading as a game bug. In one 1.0.1 game it was the
+  button that removed itself while still pressed (see `iwsdk-official/ERRATA.md`).
 
 **A test-hook component** makes scenarios quick to arrange: one dev component with plain fields
 (`x`, `y`, `z`, `yawDeg`, `teleport`, `restart`, `setting`, `value`, `apply`) and a system
