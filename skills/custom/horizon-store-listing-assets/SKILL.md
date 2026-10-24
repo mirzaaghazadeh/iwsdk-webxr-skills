@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.2.0"
 description: >-
   Prepare and validate the Meta Horizon Store listing for a WebXR / IWSDK PWA or
   a 2D PWA: art specs (covers, Hero, Mini Landscape, Logo, Icon, Spatialized
@@ -28,8 +28,8 @@ description: >-
 
 A PWA's store listing uses the same Developer Dashboard forms, art specs and VRCs as a native
 app; the asset VRCs apply to both the Store and Store (2D) columns. What differs for web apps:
-how you capture screenshots, the internet requirement, and monetization (Digital Goods API, WebXR
-PWAs only). Policy detail: [references/policy-pricing.md](references/policy-pricing.md); what
+how you capture screenshots, the internet requirement, and monetization (no app price, only
+add-ons through the Digital Goods API, WebXR PWAs only). Policy detail: [references/policy-pricing.md](references/policy-pricing.md); what
 Connect 2026 changed: this repo's `docs/meta-reference/store-2026.md`.
 
 Correction to Meta's `hz-store-submit`: it lists a 1024 px icon, a 2560 × 1440 hero, a
@@ -99,11 +99,16 @@ Bubblewrap turns into the launcher icon; see `horizon-web-store-publish`.
 | Name | max 40 characters (Publishing.4). Independent of the manifest `name` and Bubblewrap's 12-character launcher name, but keep them consistent |
 | Short description | max 500 characters (Publishing.5) |
 | Long description | max 1500 characters (Publishing.6) |
-| Search keywords | optional, relevant only (Publishing.7) |
-| Categorization | Category + Genres |
-| Specs | Game Modes, Supported Controllers, Play Area, Supported Player Modes, Comfort Level, Internet Connection, Subscription, Purchase-blocked devices, Social Features, Supported Languages in App, Early Access |
-| Details | Publisher Name, Website (Publishing.1, must resolve), Privacy Policy (Privacy.1-4), optional External Support (Publishing.2) and Terms of Service (Publishing.3) |
+| Search keywords | optional, **up to 5**, relevant only (Publishing.7). The field picks from suggestions and rejected a keyword with a space ("hand tracking") |
+| Categorization | Category + a **required primary genre** + up to 2 more, plus optional Gameplay mechanics. Game genres offered: Action, Adventure, Education, Hangout, Narrative, Party game, Puzzle, Rhythm, Role playing, Sandbox, Simulation, Sports. There is **no Casual or Arcade** genre: put those in keywords |
+| Specs | Game Modes, Supported Controllers, Play Area, Supported Player Modes, Comfort Level, Internet Connection, Subscription, Purchase-blocked devices, Social Features, Supported Languages in App, Early Access. The Dashboard pre-fills Internet Connection from the APK as not required; a PWA that loads from the web should say Required |
+| Details | Developer and Publisher (64 characters each; Developer defaults to the team name until "Use team name" is unticked), Website (Publishing.1, must resolve), Privacy Policy (Privacy.1-4), optional External Support (Publishing.2) and Terms of Service (Publishing.3) |
 | Content rating | Developer contact email (shared with IARC) + IARC certificate |
+
+Dashboard layout (observed 2026-10-24): a submission has four tabs, **Submission**, **Pricing**,
+**Build** and **App metadata**. App metadata has Name, Categorization, Specs, Details, Assets and
+Content rating, each saved on its own. **Metadata preview** shows the product page in the Store,
+the phone app and the headset for an hour, visible only to you.
 
 Web-specific: a PWA loads from your server, so declare the internet requirement truthfully and
 handle offline (Functional.7, Rec). Declare only input modalities that work alone from launch
@@ -134,6 +139,23 @@ first-person camera motion, acceleration or significant movement.
   for a 2D PWA (unverified; ask Meta support).
 - **Children** apps may not use the Get Age Category API or any Platform SDK feature.
 
+In the Dashboard (observed 2026-10-24):
+
+- **Age group** is set on the submission's **Build** tab ("Before you can submit this app for
+  review, you must self-certify its age group"). Its last step is a legal self-certification in
+  the user's name; leave Confirm to the user. The build upload dialog also warns that it's
+  "required before publishing a binary".
+- **IARC:** Content rating > country of origin and contact email > **Add certificate** opens the
+  IARC questionnaire in a new tab, and the user accepts IARC's terms there. A free-to-try game with
+  one durable unlock answers Digital Purchases **Yes** > "Purchases of digital goods" (no random
+  items, no trading). That came back as ESRB Everyone, PEGI 3, with the "In-Game Purchases"
+  notice. The tab ends on "IARC Certificate Created".
+- **Sharing preferences:** the Submission tab shows "Please confirm your app sharing preferences
+  before submitting". Those are streaming and capture by players, under Meta's Sharing Terms, which
+  the user accepts or declines.
+- **"Does your app contain ads?"** on the Build tab stayed greyed out for an immersive PWA, even
+  after the age group was set (cause unknown).
+
 ## 5. Privacy policy and Data Use Checkup
 
 Host a privacy policy at a stable URL covering (Privacy.1-4): who you are and a privacy contact;
@@ -149,13 +171,41 @@ that; recertify **yearly** or the app is removed. Test users can call these feat
 approval, except getting the logged-in user. DUC compliance also gates the User Demographics
 dashboard.
 
+**Filling it in** (Requirements > Data Use Checkup, observed 2026-10-24; the user signs it):
+
+1. **Add** each feature you use. For an IAP-only game that's just "In-app purchases and/or
+   downloadable content"; the page recommends User ID and User Profile "if you wish to use the
+   Platform SDK", which a PWA that only sells an unlock doesn't need. Each request asks for a use
+   case, a description of how the feature adds value, optional screenshots, and an "If approved, I
+   agree…" checkbox before **Add to request** becomes active. If the button stays disabled
+   after pasting text, type a character.
+2. **Submit requests**, then **Data handling**: data processors or service providers with access
+   to Meta user data (a static web host that only serves files: No); the responsible person or
+   entity and its country; whether you gave users' data to public authorities in the past 12
+   months; which policies you have for such requests (Required review, Provisions for challenging,
+   Data minimization, Documentation, **None of the above**, or "prohibited from answering", which
+   Meta warns may restrict access); the organization's country.
+3. **Review requests**, then **Submit**: the privacy policy URL is reviewed with it, and a final
+   "I certify compliance with all applicable Meta terms and policies…" box (the user's).
+   While it is under review, no other checkup can be submitted.
+
+These are statements in the developer's name. An agent can fill them in, but should leave the
+certification boxes to the user and not claim policies the developer doesn't have.
+
 ## 6. Pricing, experiments and monetization (summary; details in references)
 
 - App price: free or $0.99-$299.99 MSRP; add-ons $0.99-$99.99; local pricing per country.
+  **A PWA can only be free:** the Pricing tab says "PWAs are always free on Meta Horizon Store,
+  but you can still sell add-ons and in-app purchases", and Paid app shows an empty price list
+  (observed 2026-10-24). Pricing tab for a PWA: Listing type Full release, Price type Free app.
 - **Web IAP**: Digital Goods API + Payment Request with `https://quest.meta.com/billing`, **WebXR
   PWAs only**, **subscriptions not supported**, available only when installed from the Store
-  (ALPHA and BETA count). Manage products under Monetization > Add-ons. 2D PWAs get no Store IAP:
-  charge for the app, or run ads within Ads.1-7.
+  (ALPHA and BETA count). Manage products under Monetization > Add-ons. 2D PWAs have neither a
+  price nor Store IAP: free, or ads within Ads.1-7.
+- **Pay once, the WebXR way:** a free download with a durable unlock add-on, for example the
+  first levels free (setup and code: references/policy-pricing.md §8). The IARC questionnaire
+  then needs Digital Purchases = Yes, and the descriptions should say "free to try" and what
+  the purchase unlocks (Content.2).
 - **Price A/B test** (US only; page 2025-10-01): Growth > Price A/B Testing; starts ≥ 3 days after
   setup, runs up to 90 days, can't be edited after submission, and can cost sale eligibility if
   it ends within 30 days of a sale. Connect 2026 listed "A/B Pricing" as new; no page describes
@@ -196,5 +246,6 @@ Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
 - https://developers.meta.com/vr/resources/publish-release-channels-device-targeting/ (2026-09-04); https://developers.meta.com/vr/essentials/app-compatibility/ (2026-10-13), /ai-developer-assistant/ (2026-09-24)
 - https://developers.meta.com/vr/policy/distribution-options/ (2026-03-23), /app-policies/ (comfort ratings §5.1, IARC/GRAC §5.2, 2026-03-10)
 - https://developers.meta.com/vr/blog/smarter-pricing-better-trials-deeper-analytics-for-VR-developers/ (2026-08-11); https://developers.meta.com/blog/meta-connect-recap-start-building-the-future-of-vr/ (2026-09-24)
+- Meta Developer Dashboard, observed while listing an immersive IWSDK PWA with a durable unlock (2026-10-24): App metadata forms, Pricing, Build and Submission tabs, IARC questionnaire, Monetization > Add-ons, Data Use Checkup
 
-Last verified: 2026-10-17
+Last verified: 2026-10-24

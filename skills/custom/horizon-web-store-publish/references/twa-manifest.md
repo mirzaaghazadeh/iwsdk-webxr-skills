@@ -27,7 +27,7 @@ is `bubblewrap/packages/core/src/lib/TwaManifest.ts`.
   "fullScopeUrl": "https://orbitgarden.example.com/",
   "signingKey": { "path": "/abs/path/outside/web/android.keystore", "alias": "android" },
   "appVersionCode": 1,
-  "appVersionName": "1",
+  "appVersion": "1.0.0",
   "applicationId": "0",
   "fallbackType": "customtabs",
   "enableNotifications": false,
@@ -36,11 +36,15 @@ is `bubblewrap/packages/core/src/lib/TwaManifest.ts`.
   "isMetaQuest": true,
   "horizonOSAppMode": "immersive",
   "minSdkVersion": 23,
-  "features": { "horizonPlatformSDK": { "enabled": true } },
+  "features": { "horizonPlatformSDK": { "enabled": false } },
   "fingerprints": [],
   "additionalTrustedOrigins": []
 }
 ```
+
+`init --metaquest` writes `horizonPlatformSDK` enabled. Turn it off unless the app calls a
+Platform SDK feature: it bundles native libraries for four ABIs (see the field reference). With
+it off and no billing, the APK has no native code (692 KB instead of 6 MB, observed 2026-10-24).
 
 For a 2D app: `"horizonOSAppMode": "2D"`, `display` `standalone` (Meta's recommendation), and
 `orientation` `landscape` or `portrait`. For IAP in a WebXR PWA, add the App ID and billing:
@@ -49,10 +53,15 @@ For a 2D app: `"horizonOSAppMode": "2D"`, `display` `standalone` (Meta's recomme
   "applicationId": "<16- or 17-digit Horizon App ID>",
   "alphaDependencies": { "enabled": true },
   "features": {
-    "horizonPlatformSDK": { "enabled": true },
+    "horizonPlatformSDK": { "enabled": false },
     "horizonBilling": { "enabled": true, "horizonOSAppMode": "immersive" }
   }
 ```
+
+Billing alone still bundles the platform library's native code; strip the non-`arm64-v8a` ABIs
+after `build` (SKILL.md section 4). An app shipped this way (billing on, platform SDK off) passed
+upload validation; its purchase flow on a headset was still untested when this was written
+(unverified).
 
 ## Field reference (Meta-relevant subset)
 
@@ -66,7 +75,7 @@ For a 2D app: `"horizonOSAppMode": "2D"`, `display` `standalone` (Meta's recomme
 | `display` | `standalone` | `init` forces `standalone` and orientation `default` for immersive; asks for 2D |
 | `iconUrl`, `maskableIconUrl` | largest `any` / `maskable` icon, only if >= 512 px | `iconUrl` empty fails validation |
 | `monochromeIconUrl` | largest `monochrome` icon >= 48 px | Optional |
-| `appVersionCode` / `appVersionName` | 1 / "1" | `update` adds 1 to the code and, if name equalled the old code, sets the name to the new code; otherwise it prompts for a name. `--skipVersionUpgrade` skips this; `--appVersionName` sets the name |
+| `appVersionCode` / `appVersion` | 1 / "1" | The JSON key for the name is `appVersion`; the class field is `appVersionName` (`TwaManifest.ts`: `this.appVersionName = data.appVersion`), and a JSON key `appVersionName` is ignored, giving an empty `versionName`. `update` adds 1 to the code and, if the name equalled the old code, sets the name to the new code; otherwise it prompts for a name. `--skipVersionUpgrade` skips this; the CLI flag `--appVersionName` sets the name |
 | `applicationId` | `"0"` | Horizon App ID. `"0"` builds and sideloads without IAP. Written to `com.meta.horizon.platform.ovr.OCULUS_APP_ID` when set |
 | `isMetaQuest` | `false` | `init --metaquest` sets `true` |
 | `horizonOSAppMode` | `immersive` | Values: `immersive`, `2D` |
@@ -74,8 +83,8 @@ For a 2D app: `"horizonOSAppMode": "2D"`, `display` `standalone` (Meta's recomme
 | `enableNotifications` | `true` when created by `init` from a web manifest; `false` when the field is absent from a hand-written JSON (main) | `true` adds `POST_NOTIFICATIONS` (review-required on Quest) |
 | `enableMicrophone` | `false` | `true` adds `RECORD_AUDIO` (review-required) |
 | `enableXRScene` | `false` | `true` adds `com.oculus.permission.USE_SCENE` |
-| `features.horizonPlatformSDK` | enabled by `init --metaquest` | Adds `horizonpermissions` 1.0.0 and `horizonplatformsdk` 1.1.0 handlers to the delegation service |
-| `features.horizonBilling` | off | Adds `horizonbilling` 1.0.0-alpha11, `PaymentActivity` for `https://quest.meta.com/billing`, `PaymentService`, and `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`. Ignored unless `alphaDependencies.enabled` |
+| `features.horizonPlatformSDK` | enabled by `init --metaquest` | Adds `horizonpermissions` 1.0.0 and `horizonplatformsdk` 1.1.0 handlers to the delegation service. Also bundles `libovrplatformloader.so`, `libpsdk_jni.so` and `libc++_shared.so` for `arm64-v8a`, `armeabi-v7a`, `x86`, `x86_64` (1.24.1 build, `aapt2 dump badging`, 2026-10-24) |
+| `features.horizonBilling` | off | Adds `horizonbilling` 1.0.0-alpha11, `PaymentActivity` for `https://quest.meta.com/billing`, `PaymentService`, and `INTERNET`, `ACCESS_NETWORK_STATE`, `ACCESS_WIFI_STATE`. Ignored unless `alphaDependencies.enabled`. Bundles the same four-ABI native libraries, even with `horizonPlatformSDK` off |
 | `fallbackType` | `customtabs` | `webview` adds `INTERNET` |
 | `fingerprints` | `[]` | Managed by `bubblewrap fingerprint add/remove/list/generateAssetLinks` |
 | `additionalTrustedOrigins` | manifest `additional_trusted_origins` | Multi-origin 2D apps; each origin needs assetlinks |
@@ -97,7 +106,11 @@ From `packages/core/template_project/app/build.gradle` and `src/main/AndroidMani
   `com.oculus.ossplash.background=passthrough-contextual` ("seamless AR to AR transitions").
 - No `com.oculus.supportedDevices`, no `com.meta.store.defaultDeviceTargets`, no
   `android:installLocation`, no `excludeFromRecents` on the launch activity; release build type
-  has `minifyEnabled true`; no native code (so the 64-bit rule for Meta VR Glasses is met).
+  has `minifyEnabled true`. No native code of its own: native libraries come only with
+  `horizonPlatformSDK` or `horizonBilling`, in four ABIs. Keep only `arm64-v8a` for the 64-bit
+  rule (Packaging.6).
+- Build toolchain: build-tools 34.0.0 (`BUILD_TOOLS_VERSION`), Gradle 8.11.1, Android Gradle
+  Plugin 8.9.1.
 - The `oculus.software.handtracking required="false"` + `HAND_TRACKING` pair is what Meta's
   app-compatibility page (2026-10-13) calls "controllers and hands" support. Every Quest TWA
   declares it, in both modes. Device targeting is set at upload (`--channel "alpha:quest3+"`) or
@@ -111,7 +124,9 @@ Bubblewrap emits 23 / 32 / `required="false"`, and Meta's PWA docs (2026-07-22) 
 SDK levels. Nothing on developers.meta.com says whether the upload checks exempt TWAs.
 Still unresolved on 2026-10-17 (no Bubblewrap release and no page change since).
 **Unverified: confirm at https://developers.meta.com/vr/resources/publish-mobile-manifest/
-and with the first ALPHA upload's Test Status.** Don't edit `app/build.gradle` by hand to work
+and with the first ALPHA upload's Test Status.** One data point (2026-10-24): an immersive
+1.24.1 APK with minSdk 23 / targetSdk 32 / `required="false"` passed the Dashboard's APK
+validation and reached Test Status Complete. Don't edit `app/build.gradle` by hand to work
 around it: `bubblewrap update` overwrites it. If the upload is rejected, report the exact message
 and check https://github.com/meta-quest/bubblewrap for a newer release.
 
@@ -125,4 +140,4 @@ and check https://github.com/meta-quest/bubblewrap for a newer release.
 | `bubblewrap fingerprint add <sha256> [--name=]`, `list`, `remove`, `generateAssetLinks` | Manage assetlinks fingerprints |
 | `bubblewrap install [--apkFile=]` | adb install to a connected device |
 | `bubblewrap validate --url=<pwa-url>` | Google's TWA quality criteria (Play-oriented) |
-| `bubblewrap doctor`, `bubblewrap updateConfig --jdkPath= --androidSdkPath=` | Toolchain checks and paths |
+| `bubblewrap doctor`, `bubblewrap updateConfig --jdkPath= --androidSdkPath=` | Toolchain checks and paths. Without a TTY, `updateConfig` crashes; edit `~/.bubblewrap/config.json` instead. `doctor` wants `bin/` or `tools/` under the SDK path (SKILL.md section 4) |

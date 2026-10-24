@@ -82,7 +82,13 @@ yet (1.0.1 copies). Use `../custom/iwsdk-vr-glasses`.
   targetSdkVersion to 34" (allowed ranges 32-34 immersive, 32-37 2D) and wants
   `required="true"` on headtracking for immersive apps. No Meta page exempts PWAs. Check the built
   APK with `aapt dump badging` and treat the ALPHA upload's test results as the authority; the
-  library's `horizon-web-store-publish` flags both as RISK.
+  library's `horizon-web-store-publish` flags both as RISK. One data point (2026-10-24): an
+  immersive IWSDK 1.0.1 PWA built this way passed the Dashboard's APK validation and reached
+  Test Status Complete.
+- **`iwsdk-pwa-packaging` doesn't say a PWA can't be sold.** The Dashboard's Pricing tab says
+  "PWAs are always free on Meta Horizon Store, but you can still sell add-ons and in-app
+  purchases" (observed 2026-10-24). A paid game becomes a free download with a durable add-on;
+  see `../custom/horizon-store-listing-assets`.
 - **Built-in locomotion reads last frame's input.** `world-initializer.ts` registers
   `LocomotionSystem` at priority −5 and `InputSystem` at −4, so locomotion runs first, while
   the comment above `world.update` says "InputSystem => LocomotionSystem => GrabSystem". An
@@ -101,7 +107,15 @@ yet (1.0.1 copies). Use `../custom/iwsdk-vr-glasses`.
   `dist/xr-input-manager.js` line 461 sets `visualAdapter.visual.model.visible =
   inputSourceData.isPrimary` on each update, so hiding a controller model once (or with
   `toggleVisual`) doesn't stick. To show a held object instead, hide the model in a system that
-  runs after `InputSystem` (priority > −4), every frame.
+  runs after `InputSystem` (priority > −4), every frame. The models are at
+  `world.input.xr.visualAdapters.controller[side].visual.model` (and `.hand[side]` for hands,
+  with `connected` and `isPrimary` beside them). The pointer rays are a separate switch,
+  `world.input.xr.multiPointers[side].toggleSubPointer('ray', on)`, which a 1.0.1 game sets
+  once per change (hide them while playing, show them on menus).
+- **`System` already has `play()` and `stop()`.** `createSystem(...)` classes inherit
+  `play()`/`stop()`, which set `isPaused` (`@iwsdk/core` 1.0.1 `dist/ecs/system.js`). Naming a
+  game method `play` (or `stop`) overrides them: TypeScript rejects one that takes arguments,
+  and one that doesn't silently breaks pausing the system. Use names like `startLevel`.
 - **Controller models can be served locally**, but only with a patch: copy the
   `@webxr-input-profiles/assets` GLBs you need into `public/` and wrap `AssetManager.loadGLTF`
   before `World.create` to rewrite the jsDelivr prefix. 1.0.1 has no option for it.

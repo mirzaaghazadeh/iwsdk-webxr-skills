@@ -1,7 +1,7 @@
 # Store policy, pricing and promotion details (web apps)
 
 Values from developers.meta.com (now under `/vr/resources/<page>/`), fetched 2026-10-16; section
-9 added 2026-10-17. Page dates in brackets. Items marked **unverified** were not confirmed on a
+9 added 2026-10-17; Developer Dashboard observations (PWA pricing, DUC, add-ons) added 2026-10-24. Page dates in brackets. Items marked **unverified** were not confirmed on a
 Meta page: look them up with `metavr docs search "<topic>"` before quoting them. Sections 1-7 and
 9 are engine-neutral and match the Unity edition of this skill; section 8 is web-specific.
 
@@ -37,6 +37,10 @@ Meta page: look them up with `metavr docs search "<topic>"` before quoting them.
   annual follow the same pattern with $15/$25/$50); one increase per 90 days, effective 7 days
   after publishing. **Not usable by PWAs** (section 8).
 - Prices can change after submission, within consumer-protection law.
+- **PWAs have no app price.** The Dashboard's Pricing tab (observed 2026-10-24): "This submission
+  is for a Progressive Web App (PWA). PWAs are always free on Meta Horizon Store, but you can
+  still sell add-ons and in-app purchases for this app." Price type still offers Paid app, but
+  its price list is empty; add-on prices are available. No docs page states this yet.
 - **unverified**: revenue share percentage (set by the developer agreement, not on these pages).
 
 ## 4. Sales and promo codes [2026-04-29]
@@ -77,6 +81,11 @@ Meta page: look them up with `metavr docs search "<topic>"` before quoting them.
   Users, Matchmaking, Parties, Deep Linking, Avatars, Challenges, IAP, Subscriptions, User Age
   Group). Auto-approved during development until the first review submission or raised channel
   limits. Recertify yearly or the app is removed. Test users are exempt while a request is pending.
+- The Dashboard's DUC lists: User ID, User profile, User age group, In-app purchases and/or
+  downloadable content, Subscriptions, Avatars, Deep linking, Friends, Blocked users, Invites,
+  Parties, Challenges, Device ban (2026-10-24). The step-by-step questions are in SKILL.md §5.
+  The DUC page says requests "are most commonly rejected for privacy policy issues and
+  incomplete feature requests".
 
 ## 8. Web-specific monetization [ps-iap 2026-10-14; ps-monetization-overview 2026-07-22; ps-iap-s2s; ps-iap-test]
 - **Which PWAs:** IAP via the Digital Goods API "only in WebXR PWAs"; **subscriptions are not
@@ -111,6 +120,34 @@ Meta page: look them up with `metavr docs search "<topic>"` before quoting them.
   in the Dashboard without buying [ps-iap-test]. Never use real card numbers with test users.
 - **Cross-platform note:** Meta's Horizon Billing sample is for native Android (Horizon Billing
   Compatibility SDK mirroring Google Play Billing), not for PWAs.
+- **Durable unlock ("free to try", the PWA stand-in for a paid app).** Dashboard, observed
+  2026-10-24:
+  - Monetization > Add-ons > create: **SKU** (what the code uses), **Add-on Type** Durable,
+    **Applications** (tick the app), optional **Show in Store** (a store listing for the add-on,
+    reviewed by the content team). Then **Pricing** (add-on price points are offered even though
+    the app can't have one) and **Metadata** (name and description shown in Meta's purchase
+    dialog).
+  - **Publish stays disabled** until the Data Use Checkup includes in-app purchases (the add-on
+    page links to it). It was still disabled before the DUC was submitted; whether submitting is
+    enough or approval is needed: unverified.
+  - The APK needs `horizonBilling` and the App ID (`horizon-web-store-publish` §4).
+  - Client pattern (from a shipped IWSDK game; on-device purchase not yet verified):
+    ```js
+    // on launch and on "Restore purchase": what does the player own?
+    const owned = (await service.listPurchases()).some((p) => p.itemId === 'full_game');
+    // show the local price
+    const [item] = await service.getDetails(['full_game']);
+    const label = new Intl.NumberFormat(undefined, { style: 'currency', currency: item.price.currency })
+      .format(Number(item.price.value));
+    // buy, straight from the button press (needs the user's gesture)
+    ```
+    Cache "owned" in `localStorage` so the game opens offline, and refresh it from
+    `listPurchases()` whenever the service is available. A `PaymentRequest` rejected with
+    `AbortError` means the player cancelled. Outside the Store app (no `getDigitalGoodsService`)
+    show the unlock as unavailable rather than failing. Give tests a hook that sets "owned" both
+    ways, and treat dev builds as unlocked unless a URL flag says otherwise.
+  - Because the Store app wraps the public website, keep the full game off the plain website
+    (`horizon-launch-roadmap` Step 1).
 - **Achievements** (web ps-achievements 2026-10-14): defined in the Dashboard (Engagement >
   Achievements) and written only server-to-server (`POST https://graph.oculus.com/<USER_ID>/achievements`
   with the app token), using the user ID from `getLoggedInUserId()`. Needs the DUC.
