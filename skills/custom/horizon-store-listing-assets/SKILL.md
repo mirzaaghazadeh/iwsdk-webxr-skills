@@ -50,21 +50,26 @@ in its manifest, so make hands-only play work before you list hands.
 | Cover Square | 1440 × 1440 | 1:1 | 24-bit PNG | Same design family |
 | Cover Portrait | 1008 × 1440 | 7:10 | 24-bit PNG | Same design family |
 | Hero Cover | 3000 × 900 | 10:3 | 24-bit PNG | Branding or title centred (Asset.4); title text must match the app title |
-| Mini Landscape | 1080 × 360 | 3:1 | 24-bit PNG | In the spec table; the page gives no usage notes (check the Dashboard form) |
-| Logo | variable, max 9000 × 1440 | - | 32-bit PNG | **Transparent background** (Asset.1) |
+| Mini Landscape | 1080 × 360 | 3:1 | 24-bit PNG | In the spec table; the page gives no usage notes. The Dashboard's Assets form had **no field** for it on 2026-10-24 |
+| Logo | 360 × 360 min, 9000 × 1440 max | - | 32-bit PNG | **Transparent background** (Asset.1). **Optional** in the Dashboard form |
 | Icon | 512 × 512 | 1:1 | 24-bit PNG | Solid, no transparency |
-| Spatialized tile | 180 × 180 background + 180 × 180 foreground | 1:1 | PNG | Foreground transparent, inside the safe area with 18 dp padding, no shadow (Meta adds one). Optional: without layers the existing asset is brought forward |
+| Spatialized tile | Dashboard: 512 × 512 background + 512 × 512 foreground; 180 × 180 versions optional | 1:1 | PNG | **Optional.** Background solid; foreground transparent inside a 392 × 392 safe area (Dashboard form, 2026-10-24), no shadow (Meta adds one). The guidelines page gives only 180 × 180 with 18 dp padding. Without layers the existing asset is brought forward |
 | Screenshots | 2560 × 1440 | 16:9 | 24-bit PNG | 5, no duplicates, real in-app content, no added text or logos (Asset.5) |
 | Trailer | 1080p min, 2K max | 16:9 | MP4 / H.264 / AAC | 30 s to 2 min (Asset.7: ≤ 2 min); follow hardware safety guidelines (wrist straps, play area) |
 | Trailer cover | 2560 × 1440 | 16:9 | 24-bit PNG | |
-| 360 preview | cubestrip 12288 × 2048 (6:1) or equirect 7680 × 3840 (2:1) | | PNG, JPEG (quality ≥ 80), KTX | ≤ 2.3 MB; Meta suggests rendering 2048 × 2048 faces or an 8192 × 4096 source |
-| Immersive Image Layers (Object Left, Object Right, Logo) | not on the guidelines page (unverified) | | | Transparent backgrounds (Asset.9) |
+| 360 preview | cubestrip 12288 × 2048 (6:1) or equirect 7680 × 3840 (2:1); Dashboard minimums 6000 × 1000 and 6000 × 3000 | | PNG, JPEG (quality ≥ 80), KTX | Optional. ≤ 2.3 MB; Meta suggests rendering 2048 × 2048 faces or an 8192 × 4096 source |
+| Immersive Image Layers (Object Left, Object Right, Logo) | not on the guidelines page (unverified) | | | Transparent backgrounds (Asset.9). The Dashboard's Assets form had no field for them on 2026-10-24 |
 
 "All assets support 24 and 32-bit PNGs ... the 8-bit alpha layer is ignored unless it's for the
 Logo." Keep titles and focal points in the safe area (templates: https://metaque.st/storetemplates;
 no pixel values on the page). Branded assets carry the exact app title; only the icon is exempt.
 Each extra store language needs localized assets. Test cover art with the Dashboard's creative
 A/B test on the product page (ab-testing-instructions, 2024-12-16).
+
+The Assets form (2026-10-24) offers a **Universal basic asset**: one PNG of at least
+2560 × 1440 from which it generates every cover size. Each cover upload opens a **Safe area
+preview** ("Use image"). The form requires the three covers, the hero, the icon and 5
+screenshots; logo, spatialized tile, trailer and 360° preview are optional.
 
 Asset VRCs to self-review: Asset.2 (cover art: branding only, no taglines or banners), Asset.3
 (Rec: no text in the top or bottom 20% of covers), Asset.5, Asset.6 (no other VR platforms'

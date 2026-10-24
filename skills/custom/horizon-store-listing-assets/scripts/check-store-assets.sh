@@ -48,7 +48,10 @@ check_png() { # file expectedW expectedH alphaRule(none|required|any) label
 $info
 EOF
   if [ "$ew" = "max" ]; then
-    if [ "$w" -le 9000 ] && [ "$h" -le 1440 ]; then pass "$label ${w}x${h} (max 9000x1440)"; else fail "$label ${w}x${h} exceeds 9000x1440"; fi
+    if [ "$w" -le 9000 ] && [ "$h" -le 1440 ] && [ "$w" -ge 360 ] && [ "$h" -ge 360 ]; then pass "$label ${w}x${h} (360x360 to 9000x1440)"; else fail "$label ${w}x${h} is outside 360x360 to 9000x1440"; fi
+  elif [ "$ew" = "tile" ]; then
+    # The Dashboard form asks for 512x512 (180x180 versions are optional); the guidelines page says 180x180.
+    if { [ "$w" = 512 ] && [ "$h" = 512 ]; } || { [ "$w" = 180 ] && [ "$h" = 180 ]; }; then pass "$label ${w}x${h}"; else fail "$label is ${w}x${h}, expected 512x512 (or the optional 180x180)"; fi
   elif [ "$w" = "$ew" ] && [ "$h" = "$eh" ]; then
     pass "$label ${w}x${h}"
   else
@@ -67,13 +70,13 @@ check_png cover_square.png    1440 1440 none     "Cover Square"
 check_png cover_portrait.png  1008 1440 none     "Cover Portrait"
 check_png hero.png            3000 900  none     "Hero Cover"
 check_png icon.png            512  512  none     "Icon"
-if [ -f "$DIR/mini_landscape.png" ]; then check_png mini_landscape.png 1080 360 none "Mini Landscape"; else warn "Mini Landscape 1080x360 not provided (listed in the spec table; check whether your Dashboard form asks for it)"; fi
+if [ -f "$DIR/mini_landscape.png" ]; then check_png mini_landscape.png 1080 360 none "Mini Landscape"; else warn "Mini Landscape 1080x360 not provided (in the spec table; the Dashboard's Assets form had no field for it on 2026-10-24)"; fi
 if [ -f "$DIR/logo.png" ]; then check_png logo.png max max required "Logo"; else warn "Logo (optional) not provided"; fi
 if [ -f "$DIR/tile_background.png" ] || [ -f "$DIR/tile_foreground.png" ]; then
-  check_png tile_background.png 180 180 any      "Spatialized tile background"
-  check_png tile_foreground.png 180 180 required "Spatialized tile foreground"
+  check_png tile_background.png tile tile none     "Spatialized tile background (solid)"
+  check_png tile_foreground.png tile tile required "Spatialized tile foreground (392x392 safe area at 512)"
 else
-  warn "Spatialized tile not provided (check whether your Dashboard form requires it)"
+  warn "Spatialized tile not provided (optional in the Dashboard form)"
 fi
 if [ -f "$DIR/trailer_cover.png" ]; then check_png trailer_cover.png 2560 1440 none "Trailer cover"; fi
 
