@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.2.0"
 description: >-
   End-to-end release pipeline for shipping an IWSDK / WebXR game (or a 2D web
   app) on the Meta Horizon Store as a PWA/TWA: production build, HTTPS hosting
@@ -61,6 +61,7 @@ domains, headers), [ci.md](references/ci.md) (GitHub Actions).
 | Origin (scheme + host) | The TWA trusts exactly this host and checks `/.well-known/assetlinks.json` on it. Apex vs `www` matters | pwa-packaging; configure-assetlinks |
 | Age group | Goes into every `ovr-platform-util` upload; Mixed Ages WebXR PWAs must call `getUserAccountAgeCategory()` on every launch | ps-iap; age-groups |
 | Hand support | Bubblewrap's Quest template always declares `oculus.software.handtracking required="false"` + `HAND_TRACKING`, which Meta defines as "controllers and hands". Make hands-only play work from launch (Tracking.2). Whether the Store's hands-first ranking for Meta VR Glasses reads this declaration is undocumented (unverified) | app-compatibility (2026-10-13); Bubblewrap `template_project` |
+| Price model | **A PWA can't be a paid app.** The Dashboard's Pricing tab says "PWAs are always free on Meta Horizon Store, but you can still sell add-ons and in-app purchases"; choosing Paid app shows an empty price list. To charge, sell a durable add-on through the Digital Goods API, which needs `horizonBilling` and the App ID in the APK (section 4) and a Data Use Checkup (`horizon-store-listing-assets`) | Dashboard, observed 2026-10-24 |
 
 Plan the launch with `horizon-launch-roadmap`. Create the app in the Developer Dashboard first
 (Create a New App, platform Meta Horizon Store) to get the App ID; you need it for IAP and upload.
@@ -151,6 +152,33 @@ bubblewrap update --skipVersionUpgrade          # regenerate the Android project
 bubblewrap build                                # -> app-release-signed.apk (+ app-release-bundle.aab)
 ```
 
+`npx -y @meta-quest/bubblewrap-cli@1.24.1 <command>` runs the same CLI without a global install
+(it still sets up a JDK and an Android SDK; ask first).
+
+**Toolchain without a TTY** (Bubblewrap 1.24.1, observed 2026-10-24):
+
+- The first run asks whether to download a JDK and an SDK; with no TTY it fails, and so does
+  `updateConfig` (`ERR_USE_AFTER_CLOSE` from inquirer), leaving
+  `~/.bubblewrap/config.json` as `{"jdkPath":"","androidSdkPath":""}`. Write both paths into
+  that file yourself. `jdkPath` is the JDK 17 home without `Contents/Home` on macOS (Homebrew:
+  `.../openjdk@17/<v>/libexec/openjdk.jdk`).
+- `doctor` accepts `androidSdkPath` only if it contains `tools/` or `bin/`
+  (`AndroidSdkTools.validatePath`), because Bubblewrap runs `<sdk>/bin/sdkmanager` itself to
+  install build-tools **34.0.0** (`BUILD_TOOLS_VERSION`). An Android Studio SDK
+  (`~/Library/Android/sdk`) has neither, and the error message wrongly asks for a folder
+  "build". Fix: an SDK root with the command-line tools and a `bin` link:
+
+```bash
+SDK=~/.bubblewrap/android_sdk                     # what Bubblewrap itself would create
+# unzip Google's commandlinetools-<os>-<rev>_latest.zip, move its cmdline-tools/ to $SDK/cmdline-tools/latest
+ln -sfn "$SDK/cmdline-tools/latest/bin" "$SDK/bin"
+yes | "$SDK/bin/sdkmanager" --sdk_root="$SDK" --licenses
+"$SDK/bin/sdkmanager" --sdk_root="$SDK" "build-tools;34.0.0" "platforms;android-32" "platform-tools"
+```
+
+  The Quest template compiles against API 32 (Gradle 8.11.1, Android Gradle Plugin 8.9.1, from
+  `template_project`). Accepting the SDK licences is the user's call; ask first.
+
 Fields to set by hand that `hz-store-pwa`'s template misses (from Bubblewrap source; full list in
 [twa-manifest.md](references/twa-manifest.md)):
 
@@ -158,13 +186,38 @@ Fields to set by hand that `hz-store-pwa`'s template misses (from Bubblewrap sou
 |---|---|---|
 | `isMetaQuest` | `true` | Quest template: VR/2D intent category, `horizonos.pwa.APP_MODE` |
 | `horizonOSAppMode` | `"immersive"` or `"2D"` | Default is `immersive` |
-| `features.horizonPlatformSDK.enabled` | `true` | `init --metaquest` always adds it (Horizon permission and platform request handlers) |
+| `features.horizonPlatformSDK.enabled` | `false` unless you use it | `init --metaquest` always adds it (Horizon permission and platform request handlers). It also bundles Meta's platform library as native code for four ABIs (next paragraph): the APK grew from 0.7 MB to 6 MB. Leave it on only for a Platform SDK feature you call |
 | `enableNotifications` | `false` | Manifests built by `init` default to `true`, which adds `POST_NOTIFICATIONS`, a review-required permission |
-| `appVersionCode`, `appVersionName` | integers you control | `update` bumps the code by 1 unless `--skipVersionUpgrade`; `build` always bumps it when it regenerates a changed manifest |
+| `appVersionCode`, `appVersion` | an integer and a string you control | The JSON key for the version name is **`appVersion`** (`TwaManifest.ts` reads `data.appVersion` into `appVersionName`). A key named `appVersionName` is ignored and the APK ships with an empty `versionName`. `update` bumps the code by 1 unless `--skipVersionUpgrade`; `build` always bumps it when it regenerates a changed manifest |
 | IAP only: `applicationId`, `alphaDependencies.enabled`, `features.horizonBilling` | App ID; `true`; `{ "enabled": true, "horizonOSAppMode": ... }` | Bubblewrap skips Horizon Billing unless `alphaDependencies` is enabled |
 
 `build` prompts when `manifest-checksum.txt` is missing or the JSON changed since the last
 update; run `update` first so CI never hits a prompt.
+
+**Native code from the platform library.** `horizonPlatformSDK` or `horizonBilling` adds
+`libovrplatformloader.so`, `libpsdk_jni.so` and `libc++_shared.so` for `arm64-v8a`,
+`armeabi-v7a`, `x86` and `x86_64` (`aapt2 dump badging` → `native-code:`). Quest runs only
+`arm64-v8a`, and `verify-twa-apk.sh` FAILs on the others (Packaging.6). A build with neither
+feature has no native code. For IAP you need billing, so after `build` start from Bubblewrap's
+unsigned `app-release-unsigned-aligned.apk`, delete the other ABIs, align again (deleting entries
+breaks the alignment) and sign:
+
+```bash
+T=~/.bubblewrap/android_sdk/build-tools/34.0.0
+cp app-release-unsigned-aligned.apk work.apk
+zip -q -d work.apk 'lib/armeabi-v7a/*' 'lib/x86/*' 'lib/x86_64/*'
+"$T/zipalign" -f -p 4 work.apk aligned.apk
+# same password for keystore and key: use env: for both. With file: on one file, apksigner reads
+# the key password from the file's second line.
+"$T/apksigner" sign --ks <ks> --ks-key-alias <alias> --ks-pass env:KS_PASS --key-pass env:KS_PASS \
+  --out app-arm64.apk aligned.apk
+"$T/apksigner" verify --print-certs app-arm64.apk
+```
+
+The stripped APK passed the Dashboard's APK validation (2026-10-24). Whether the Store would
+reject the extra ABIs is undocumented. Purchases with `horizonPlatformSDK` off were not yet
+tested on a headset when this was written (unverified): test the unlock from an ALPHA install
+before release.
 
 **Asset links:** get the certificate SHA-256 (`keytool -list -v -keystore <ks> -alias <alias>`;
 use the `keytool` in `~/.bubblewrap/jdk` if none is on PATH), run `bubblewrap fingerprint add
@@ -184,9 +237,14 @@ It reports **RISK** for gaps between Meta's generic release-manifest page and Me
 Bubblewrap template: minSdk 23 (page: 29-34), targetSdk 32 (page: 34 for apps created since
 2026-03-01), headtracking `required=false` for immersive, no `supportedDevices`, no
 `installLocation`, no `excludeFromRecents`. Meta's PWA docs don't mention any of these. Treat the
-ALPHA upload's **Manage Builds > Test Status** as the authority (Packaging.1/3/4 run at upload).
+upload's **Manage Builds > Test Status** as the authority (Packaging.1/3/4 run at upload).
 If it rejects one, report it to the user with the exact message; don't patch the generated
 project. It also prints the declared input (Bubblewrap: controllers and hands) as INFO.
+
+**Observed 2026-10-24:** an immersive Bubblewrap 1.24.1 APK with all six RISKs (minSdk 23,
+targetSdk 32, headtracking `required="false"`, no `supportedDevices`, `installLocation` or
+`excludeFromRecents`) passed the Dashboard's APK validation, and its Test Status reached
+**Complete** (no native code, no billing). That is one app's result, not a documented exemption.
 
 ## 6. Sideload and test on a headset
 
@@ -227,6 +285,24 @@ That runs `ovr-platform-util upload-quest-build --app-id --apk --channel --age-g
 Then: read Test Status; invite testers (Distribution > Release Channels; 200 users by default,
 up to 2,500 on request; channels start with no users, not even you). Builds appear in the tester's
 Library and **My Preview Apps**.
+
+**Uploading in the Dashboard** (Distribution > Builds, observed 2026-10-24):
+
+- The upload dialog defaults to the **LIVE (Production) channel as a Draft**. That's the build a
+  review needs: the submission's Build tab says "Only draft builds in the Production Channel may
+  be attached to Submissions." A LIVE draft reaches no players until review passes and the user
+  releases it. Upload to ALPHA as well when people need to test it (IAP included).
+- Steps: APK (validated in the dialog: "APK validation passed"), optional files, Supported
+  devices (Quest 2, Pro, Quest 3 family and Future devices were preselected), Review, Start
+  upload. The dialog warns "Age group self-certification is required before publishing a
+  binary"; the upload itself works without it.
+- **Browser automation:** the APK input is created only when the button is clicked, which opens a
+  native file dialog an agent can't use. Patching `HTMLInputElement.prototype.click` keeps the
+  input on the page so a file can be attached. Files attached by automation can arrive as
+  `application/octet-stream`, and the page checks the type on the `input` event, before
+  `change`. An `input` listener in the capture phase that relabels the file as
+  `application/vnd.android.package-archive` gets it accepted. The page reloads between
+  sections, so add both again after each reload.
 
 ## 7a. Device targeting and Meta VR Glasses
 
@@ -289,6 +365,11 @@ Keep a staging origin for testing and promote web builds to production the same 
 | Upload: "must first agree to our Developer Distribution Agreement" | DDA unsigned | Org admin signs it; retry |
 | Upload rejected: version code | Not above every earlier upload | Raise `appVersionCode`, rebuild |
 | Gradle: incompatible Java | Wrong JDK | Let Bubblewrap install its JDK or fix `jdkPath` (`bubblewrap doctor`, `updateConfig --jdkPath`) |
+| `updateConfig` crashes with `ERR_USE_AFTER_CLOSE`; config has empty paths | No TTY for its prompts | Write `~/.bubblewrap/config.json` by hand (section 4) |
+| `doctor`: "The androidSdkPath isn't correct… contains the folder 'build'" | The SDK root has no `bin/` or `tools/` | Command-line tools plus a `bin` link (section 4) |
+| APK `versionName` is empty | JSON key `appVersionName` instead of `appVersion` | Rename the key, `update`, `build` |
+| `verify-twa-apk.sh`: "native code includes non-ARM64 ABIs" | `horizonPlatformSDK` or `horizonBilling` | Turn off what you don't use; strip the other ABIs and sign again (section 4) |
+| `apksigner` fails on the key password | `--ks-pass` and `--key-pass` both `file:` one file: the key password is read from line 2 | Use `env:VAR` for both |
 
 ## Sources
 
@@ -314,5 +395,8 @@ Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
 - https://github.com/facebook/immersive-web-sdk `packages/core/src/ecs/world.ts` (`World.launchXR(xrOptions?)`, main, IWSDK 1.0.1)
 - https://developer.android.com/training/app-links/configure-assetlinks
 - https://github.com/actions/upload-pages-artifact (v3.0.1, v4.0.0, v5.0.0 action.yml); https://github.com/tschaub/gh-pages (`--dotfiles`, `--nojekyll`)
+- npm `@meta-quest/bubblewrap-core` / `-cli` 1.24.1 `dist/lib/TwaManifest.js` (`appVersionName = data.appVersion`), `dist/lib/androidSdk/AndroidSdkTools.js` (`BUILD_TOOLS_VERSION = '34.0.0'`, `validatePath`), `bubblewrap-cli/dist/lib/AndroidSdkToolsInstaller.js` (command-line tools rev 6609375), `template_project/` (compile/target SDK 32, AGP 8.9.1, Gradle 8.11.1); read 2026-10-24
+- https://developer.android.com/tools/apksigner (`--ks-pass`, `--key-pass`: `pass:`, `env:`, `file:`, `stdin`)
+- Meta Developer Dashboard, observed while shipping an immersive IWSDK PWA (2026-10-24): Pricing tab notice, Build tab ("Only draft builds in the Production Channel…"), build upload dialog, Test Status
 
-Last verified: 2026-10-17
+Last verified: 2026-10-24

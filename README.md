@@ -165,12 +165,12 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 
 | Skill | Source | Use it for |
 |---|---|---|
-| `horizon-launch-roadmap` | **original** | Hosted web vs Store PWA, 2D vs immersive, the decisions you can't undo (package name, signing key, domain), Early Access |
+| `horizon-launch-roadmap` | **original** | Hosted web vs Store PWA, 2D vs immersive, the decisions you can't undo (package name, signing key, domain), free-only PWAs and the unlock add-on, Early Access |
 | `iwsdk-hosting` | IWSDK | Publish to a public HTTPS origin that can serve `/.well-known/` |
-| `horizon-web-store-publish` | **original** | **The release pipeline**: build → hosting → manifest → Bubblewrap → verify → sideload → ALPHA → promote, device targeting (`quest3+`, "Future devices" for Meta VR Glasses), asking before every upload; with deploy, APK and upload scripts |
+| `horizon-web-store-publish` | **original** | **The release pipeline**: build → hosting → manifest → Bubblewrap (incl. a toolchain with no TTY, 64-bit-only APKs) → verify → sideload → ALPHA and the LIVE draft a submission needs → promote, device targeting (`quest3+`, "Future devices" for Meta VR Glasses), asking before every upload; with deploy, APK and upload scripts |
 | `iwsdk-pwa-packaging`, `hz-store-pwa` | IWSDK, Meta | The upstream PWA/TWA guides the pipeline builds on (see both ERRATA files) |
 | `horizon-web-vrc-checklist` | **original** | Every active VRC by ID, mapped to web apps (Store and Store 2D columns), each with a WebXR check and a headset test |
-| `horizon-store-listing-assets` | **original** | Store art specs (incl. Mini Landscape), metadata limits, IARC, privacy policy, Data Use Checkup, pricing, price A/B tests, bundles, analytics and web IAP; with an image checker |
+| `horizon-store-listing-assets` | **original** | Store art specs (incl. Mini Landscape), metadata limits and genres, IARC, privacy policy, a step-by-step Data Use Checkup, pricing (PWAs are free; sell a durable unlock), add-ons, price A/B tests, bundles, analytics and web IAP; with an image checker |
 | `hz-store-submit` | Meta | Meta's general submission walkthrough. **Some specs are out of date**: see ERRATA |
 | `pwa-offline` | community (AQaddora) | Service-worker updates, version skew, cache headers |
 | `cf-cli`, `wrangler` | community (Cloudflare) | Host on Cloudflare (new projects / existing Wrangler projects) |

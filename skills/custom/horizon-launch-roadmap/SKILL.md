@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.1.0"
+  version: "1.2.0"
 description: >-
   Plan and sequence the launch of an IWSDK / WebXR game or 2D web app on Meta
   Quest: choose between hosted web, the Browser new tab page and a Horizon
@@ -37,10 +37,15 @@ stages, technical (the VRCs) then content ("completeness, polish, and value", pu
 | Hosted URL in Quest Browser | Open a link; Enter VR button | None | Your own web payments (outside Meta billing) | web index; web-hosting |
 | Browser **new tab page** feature | Curated tile in Quest Browser | Multi-step (QA, content, technical); 4 weeks at the top of the shelf, then ranked by monthly traffic; not guaranteed | Same as hosted | browser-new-tab (2026-07-22) |
 | **Web Launch** links | `https://www.oculus.com/open_url/?url=<encoded-https-url>` sends a link from a computer or phone to Quest Browser | None | Same as hosted | web-launch (2026-07-22) |
-| **Horizon Store PWA** (this library's focus) | Library app, store page, launches like a native app | Full Store review (VRCs) | Paid app; IAP via Digital Goods for **WebXR PWAs only**, no subscriptions | pwa-overview; ps-iap |
+| **Horizon Store PWA** (this library's focus) | Library app, store page, launches like a native app | Full Store review (VRCs) | **Free download only**; sell add-ons through Digital Goods IAP, **WebXR PWAs only**, no subscriptions | pwa-overview; ps-iap; Dashboard Pricing tab (2026-10-24) |
 
 The paths combine: the Store PWA is a wrapper around the same hosted site, so you can keep the
 site public. Meta: "A web app can remain available through its website without a PWA package."
+If the Store app sells an unlock, though, the public site would give the full game away: serve
+the full game only to the installed app (a start-URL query such as `?app=1` set in Bubblewrap's
+`startUrl`, or `window.getDigitalGoodsService` present) and show a "get it on the Store" page
+to everyone else. A query string is easy to copy, so this deters, it doesn't protect. Also
+gate the unlock itself on `listPurchases()` (`horizon-store-listing-assets`).
 
 **Horizon Worlds** is a different product (worlds built in Meta's Horizon desktop editor and
 hosted by Meta, no APK, no VRC review). A WebXR or IWSDK project does not port into Worlds; pick
@@ -55,7 +60,7 @@ Worlds only for hosted social creations. Background: `docs/research-meta-web.md`
 | **Signing key** | "Every future update must use the same signing certificate." Lost key = new app. Two offline backups plus the passwords | pwa-packaging; Packaging.2 |
 | **Origin (host)** | Baked into the APK and checked through `/.well-known/assetlinks.json`. Moving needs a new APK version and assetlinks on both hosts until users update. GitHub Pages project sites can't serve the origin root | pwa-packaging; `horizon-web-store-publish` |
 | **Version-code scheme** | Only goes up across every channel. Bubblewrap bumps it on `update` unless told not to | Bubblewrap source; `hz-store-submit` |
-| **Monetization model** | Web IAP works only in WebXR PWAs and has no subscriptions. A 2D app or a subscription business needs another plan (paid app, web payments outside the Store, or native) | ps-iap (2026-10-14) |
+| **Monetization model** | **A PWA can't be a paid app.** The Dashboard says "PWAs are always free on Meta Horizon Store, but you can still sell add-ons and in-app purchases", and its Paid app price list is empty. A pay-once game becomes a free download with a durable unlock add-on (for example the first levels free). That needs `horizonBilling` and the App ID in the APK, an add-on, and a Data Use Checkup. Web IAP works only in WebXR PWAs and has no subscriptions, so a 2D app or a subscription business needs another plan (web payments outside the Store, or native) | ps-iap (2026-10-14); Dashboard Pricing tab (observed 2026-10-24) |
 | **Early Access** | Only for **newly published** apps; turning it off is **irreversible** | early-access (2025-12-17) |
 | **Coming Soon / pre-orders** | Only during the **initial submission**; pre-order price can't change; date can't move to within 2 weeks | pre-launch-listings (2026-08-06) |
 | **Data Use Checkup** | Needed for Digital Goods IAP and `getLoggedInUserId()`. Auto-approval ends at the first review submission or a raised channel limit; test those features before | ps-iap; publish-data-use (2026-10-14) |
@@ -72,10 +77,10 @@ Worlds only for hosted social creations. Background: `docs/research-meta-web.md`
 | 1. Build | Interaction, UI, comfort, MR features; choose WebXR features per device; gaze-and-pinch for VR Glasses | `hz-iwsdk-webxr`, `quest-browser-webxr`, `hz-immersive-designer`, `iwsdk-vr-glasses` |
 | 2. Host | Production HTTPS origin you control at the root; staging origin for tests | `horizon-web-store-publish` (references/hosting.md), `hz-store-pwa` |
 | 3. Package and test | Bubblewrap build, verify, sideload, ALPHA/BETA (200 users default, up to 2,500) | `horizon-web-store-publish`, `hz-vr-debug` |
-| 4. Platform features | Digital Goods IAP, user ID, age category, server checks; fill the DUC | `horizon-store-listing-assets` (references/policy-pricing.md) |
+| 4. Platform features | Digital Goods IAP, user ID, age category, server checks; create the add-on (Monetization > Add-ons; it can't be published until the DUC is done); fill the DUC | `horizon-store-listing-assets` (references/policy-pricing.md) |
 | 5. Performance and compliance | OVR Metrics 45-minute runs; VRC audit; fix FAILs and RISKs | `horizon-web-vrc-checklist`, `quest-browser-webxr`, `hz-perfetto-debug` |
 | 6. Listing | Art, metadata, IARC, age group, privacy policy, price | `horizon-store-listing-assets` |
-| 7. Submit | Production channel + Submission tab > Submit for Review (Dashboard, by the user) | `hz-store-submit`, `horizon-web-vrc-checklist` |
+| 7. Submit | A **draft build in the Production (LIVE) channel** attached on the Build tab (only those can be attached), age group self-certified, sharing preferences confirmed, then Submission tab > Submit for Review (Dashboard, by the user) | `hz-store-submit`, `horizon-web-vrc-checklist`, `horizon-store-listing-assets` |
 | 8. Live ops | Web redeploys via staging; APK updates for native changes; subscribe to analytics alerts; sales, bundles, promo codes, keys; price A/B tests (US only); yearly DUC | `horizon-web-store-publish`, `horizon-store-listing-assets` |
 
 ## Step 4: timeline, counting back from launch day L
@@ -101,7 +106,9 @@ stretch it).
 
 - **Bubblewrap vs release-manifest rules**: Meta's template emits targetSdk 32 / minSdk 23 while
   the manifest page asks new apps for targetSdk 34 (see `horizon-web-store-publish`). Upload a
-  first ALPHA build early, weeks before submission, to learn whether Store checks accept it.
+  first build early, weeks before submission, to learn whether Store checks accept it. One
+  immersive PWA's 32 / 23 build reached Test Status Complete on 2026-10-24; that's not a
+  documented exemption.
 - **Unreviewed changes**: web deploys reach Store users without review. Keep the reviewed
   experience, metadata (Content.2) and age-appropriate content stable; test on staging first.
 - **Hosting is now production infrastructure**: uptime, TLS renewal and the assetlinks file
@@ -125,5 +132,6 @@ Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
 - https://developers.meta.com/vr/resources/monetization-price-ab-testing/ (2025-10-01), /try-before-you-buy/ (2026-06-29), /publish-analytics-alerts/ (2025-10-01)
 - https://developers.meta.com/vr/essentials/app-compatibility/ (2026-10-13); https://developers.meta.com/blog/meta-connect-recap/ (Connect 2026, 2026-09-24)
 - https://developers.meta.com/horizon-worlds/ (Worlds; summary in docs/research-meta-web.md)
+- Meta Developer Dashboard, observed while shipping an immersive IWSDK PWA with a durable unlock (2026-10-24): Pricing, Build and Submission tabs, Add-ons, Data Use Checkup
 
-Last verified: 2026-10-17
+Last verified: 2026-10-24

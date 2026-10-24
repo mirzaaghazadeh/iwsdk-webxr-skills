@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.3.0"
+  version: "1.4.0"
 description: >-
   Sets up repeatable automated tests for an IWSDK WebXR app: typecheck and
   build gates, asset checks, a headless smoke test that drives the IWER
@@ -199,6 +199,14 @@ hold-move-release grab use `xr set-select-value` on the hand (IWSDK gaze docs).
   have `Hovered`: that tells "aimed wrong" apart from "the press was lost". A test that alternates
   pass/fail on the same press is worth reading as a game bug. In one 1.0.1 game it was the
   button that removed itself while still pressed (see `iwsdk-official/ERRATA.md`).
+- **The other controller's ray counts too.** Both emulated controllers point forward by default.
+  On a wide panel the idle hand's ray can rest on a button, and a game that gives the pointed-at
+  button to whichever hand is aiming will then ignore the trigger on the other side. Aim both
+  controllers explicitly (the idle one away from the panel) before pressing.
+- **Input mode is emulator state, not test state.** After `xr set-input-mode` hand (or a manual
+  check in hand mode), the managed browser stays in hand mode for the next test and the next run,
+  and controller presses do nothing. Set the mode at the start of every suite and in every hand
+  test's cleanup.
 
 **A test-hook component** makes scenarios quick to arrange: one dev component with plain fields
 (`x`, `y`, `z`, `yawDeg`, `teleport`, `restart`, `setting`, `value`, `apply`) and a system
@@ -314,5 +322,6 @@ commands with a `runtimeTarget`). Manual checklist: **`iwsdk-quest-device-testin
 - Test-hook component, CLI timing, `xr look-at` target shape, frame-stepped recording and the Vitest controller: an IWSDK 1.0.1 VR prototype, 2026-10-16/17
 - Gaze automation: IWSDK 1.0.1 `docs/concepts/xr-input/gaze.md` ("Drive tests from the CLI"), https://developers.meta.com/horizon/documentation/iwsdk/guides/02-testing-experience/ ("Automate gaze and pinch", 2026-09-04)
 - CLI timing with the project binary, the hang, `render-stats` and `ERR_ABORTED` behaviour, count races, the `command`/`timeScale`/mirrored-counter hooks, the Vitest suite, the bot player and the production smoke: an IWSDK 1.0.1 MR train-set game, 2026-10-23 (observed, not from IWSDK docs)
+- The idle controller's ray and the sticky input mode: an IWSDK 1.0.1 seated VR game with 16 emulator tests, 2026-10-24 (observed)
 
-Last verified: 2026-10-23
+Last verified: 2026-10-24

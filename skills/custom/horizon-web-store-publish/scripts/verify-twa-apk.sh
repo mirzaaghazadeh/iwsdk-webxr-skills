@@ -93,10 +93,11 @@ if [ -n "$csdk" ] && [ -n "$tsdk" ] && [ "$csdk" -lt "$tsdk" ]; then fail "compi
 # Debuggable (publish-mobile-manifest: false or unset)
 if echo "$BADGING" | grep -q "^application-debuggable"; then fail "android:debuggable=true"; else pass "not debuggable"; fi
 
-# 64-bit (Packaging.6). A TWA normally ships no native code at all.
+# 64-bit (Packaging.6). A TWA ships no native code unless horizonPlatformSDK or horizonBilling
+# bundles Meta's platform library, which comes in four ABIs.
 native=$(echo "$BADGING" | sed -n "s/^native-code: //p")
 if [ -z "$native" ]; then pass "no native code (64-bit rule satisfied trivially)"
-elif echo "$native" | grep -q "armeabi-v7a\|x86"; then fail "native code includes non-ARM64 ABIs: $native"
+elif echo "$native" | grep -q "armeabi-v7a\|x86"; then fail "native code includes non-ARM64 ABIs: $native (from horizonPlatformSDK/horizonBilling: turn off what you don't use, or strip the other ABIs and sign again; SKILL.md section 4)"
 else pass "native code: $native"; fi
 
 # Signing (Packaging.2) and certificate fingerprint for Digital Asset Links
