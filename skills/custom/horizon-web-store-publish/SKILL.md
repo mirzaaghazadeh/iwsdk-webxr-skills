@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.2.0"
+  version: "1.2.1"
 description: >-
   End-to-end release pipeline for shipping an IWSDK / WebXR game (or a 2D web
   app) on the Meta Horizon Store as a PWA/TWA: production build, HTTPS hosting
@@ -398,5 +398,6 @@ Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
 - npm `@meta-quest/bubblewrap-core` / `-cli` 1.24.1 `dist/lib/TwaManifest.js` (`appVersionName = data.appVersion`), `dist/lib/androidSdk/AndroidSdkTools.js` (`BUILD_TOOLS_VERSION = '34.0.0'`, `validatePath`), `bubblewrap-cli/dist/lib/AndroidSdkToolsInstaller.js` (command-line tools rev 6609375), `template_project/` (compile/target SDK 32, AGP 8.9.1, Gradle 8.11.1); read 2026-10-24
 - https://developer.android.com/tools/apksigner (`--ks-pass`, `--key-pass`: `pass:`, `env:`, `file:`, `stdin`)
 - Meta Developer Dashboard, observed while shipping an immersive IWSDK PWA (2026-10-24): Pricing tab notice, Build tab ("Only draft builds in the Production Channel…"), build upload dialog, Test Status
+- `scripts/verify-twa-apk.sh` re-run on a Bubblewrap 1.24.1 APK (2026-10-25): aapt2 prints `minSdkVersion:'23'`, which the script now reads (it read only aapt's `sdkVersion:`, so minSdk came out empty)
 
-Last verified: 2026-10-24
+Last verified: 2026-10-25 (the verifier's minSdk reading); 2026-10-24 (the rest)
