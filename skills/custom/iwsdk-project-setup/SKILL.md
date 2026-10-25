@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.2.0"
+  version: "1.2.1"
 description: >-
   Sets up a machine and a project for Meta Immersive Web SDK (IWSDK) WebXR
   development with Claude Code: checks Node, maps the game pitch to
@@ -251,6 +251,7 @@ the first `npm install`, what it does:
 | "Only pmndrs/uikit components can be added as children" | duplicate Three/UIKit graph; keep the scaffold's `resolve.dedupe` in `vite.config.ts` |
 | Scaffold's install step fails with `EALLOWSCRIPTS` (`--allow-scripts` not allowed in project installs), seen with npm 11.19 | The project is created; install by hand: `npm install`, then `npm install-scripts approve esbuild protobufjs` and `npm install-scripts deny @meta-quest/metavr onnxruntime-node` (the intent of the scaffold's pnpm settings). Denying metavr's script also skips its `~/.metavr` download and shell-profile edit (§9) |
 | Two IWSDK apps on one machine | Both scaffolds use 8081 and the port is strict; give the second app another `server.port` (and use that port on the headset) |
+| `/mcp` shows two or three `metavr` servers, and every `hz-*` skill twice | Someone ran `metavr init`, which installs Meta's plugin, skills and an MCP entry at user scope (metavr 1.8.0.17.10, 2026-10-25). Keep `adapter sync`'s entry and one source of skills; this library's `docs/meta-reference/ai-tools.md` §3 lists what `metavr init` writes and how to move it into the project |
 
 ## Sources
 
@@ -264,5 +265,6 @@ the first `npm install`, what it does:
 - npm `@iwsdk/cli` 1.0.1 `dist/cli.js` (`RUNTIME_MCP_TOOLS`, `tools/list`, `isRuntimeBrowserCommandReady`); npm `@iwsdk/core` 1.0.1 and 1.1.0-rc.1 `dist/project/types.d.ts`, `environments.js` (read 2026-10-17; `next` tag 1.1.0-rc.1 published 2026-10-13)
 - https://developers.meta.com/horizon/documentation/iwsdk/ai/mcp-tools/ (2026-09-04, "45 tools", IWSDK 0.5.3), /ai/getting-started/ (2026-09-23)
 - npm `iwer` 2.6.0 `lib/device/configs/headset/meta.js` (`metaVRGlasses` view mask)
+- `metavr init` (metavr 1.8.0.17.10) run on macOS with Claude Code 2.1.310, 2026-10-25
 
-Last verified: 2026-10-17
+Last verified: 2026-10-25 (the `metavr init` row); 2026-10-17 (the rest)

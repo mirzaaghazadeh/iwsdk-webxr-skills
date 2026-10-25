@@ -1,6 +1,6 @@
 # Meta's AI tools for VR developers: condensed reference (web / IWSDK edition)
 
-Checked 2026-10-17. Our own summary; each row cites `[key date]` (page "Updated" date), resolved
+Checked 2026-10-17; `metavr init`, the plugin id and the MCP re-test added 2026-10-25. Our own summary; each row cites `[key date]` (page "Updated" date), resolved
 in [Sources](#sources). Nothing was installed or run: version facts come from the npm registry,
 the npm package files and Meta's public binary feed. The Unity library has the same reference with
 Unity specifics (`unity-meta-quest-skills/docs/meta-reference/ai-tools.md`).
@@ -39,8 +39,8 @@ age-group or device-targeting flag) [install 2026-08-31; troubleshoot 2026-08-27
 
 | Route (Meta) | Installs | Source |
 |---|---|---|
-| `metavr init` | metavr skill, MCP config, agent plugins | [install 2026-08-31] |
-| `/plugin marketplace add meta-quest/agentic-tools` + `/plugin install meta-vr@meta-quest` | All 36 Meta skills + an MCP server via `npx` | [other-tools 2026-08-31] |
+| `metavr init` | metavr skill, MCP config, agent plugins, all at **user scope** (details below) | [install 2026-08-31]; observed 2026-10-25 |
+| `/plugin marketplace add meta-quest/agentic-tools` + `/plugin install meta-vr@meta-vr` | All 36 Meta skills + an MCP server via `npx` | [other-tools 2026-08-31] |
 | `gh skill install` / `npx skills add` / `npx ctx7@latest skills install` | Skills only | [other-tools 2026-08-31] |
 | `metavr skills install --all` | Skills into `~/.agents/skills` | reference §skills |
 | `npx @iwsdk/cli adapter sync --tools claude` | IWSDK, iwsdk-reference and metavr MCP entries in `.mcp.json` | `mcp/README.md` |
@@ -52,13 +52,44 @@ Meta: `metavr init` already installs the skills and MCP config, so use the plugi
 MCP entry. In an IWSDK project that entry normally comes from `adapter sync`; don't add a second
 one with `metavr mcp install`.
 
+**Correction to the other-tools page:** it gives `/plugin install meta-vr@meta-quest` for Claude
+Code, but the repo's `.claude-plugin/marketplace.json` names the marketplace `meta-vr`, so the
+plugin is `meta-vr@meta-vr` (agentic-tools `3a8553d`; `metavr init` installed it under that name,
+2026-10-25).
+
+**What `metavr init` installs** (metavr 1.8.0.17.10, observed 2026-10-25). Ask before running it,
+and tell the user that it all lands in their home folder, for every project:
+- `metavr-cli` plus 35 skills from agentic-tools go into `~/.agents/skills`, symlinked from
+  `~/.claude/skills` and `~/.cursor/skills`;
+- the `meta-vr@meta-vr` plugin (v2.0.0: the same 36 skills plus an MCP server via `npx -y metavr`)
+  is installed at user scope;
+- a `metavr` MCP entry is added to `~/.claude.json` at local scope for the current folder, and to
+  `~/.cursor/mcp.json`;
+- after sign-in it downloads a 330 MB "VRC-local" bundle with 10 more skills: `vrc-drive`,
+  `vrc-verdict`, `vrc-listing-check`, `vrc-listing-assets`, `troubleshoot`, `da-scout`,
+  `analyze-drive`, `perf-render-capture`, `renderdoc-optimize`, `runtime-optimizer`.
+
+In an IWSDK project that means two or three `metavr` MCP servers (`adapter sync`'s, the local
+entry, the plugin's) and two copies of each `hz-*` skill next to this library. To keep Meta's tools
+in one project instead:
+1. `claude plugin install meta-vr@meta-vr --scope project`, then `claude plugin uninstall
+   meta-vr@meta-vr --scope user`. Add `meta-quest/agentic-tools` to the project's
+   `extraKnownMarketplaces`, under the name `meta-vr`.
+2. `claude mcp remove metavr -s local`. Keep the project's own entry (from `adapter sync` in an
+   IWSDK game). Project servers need a one-time approval when Claude Code next starts there.
+3. Move the skill folders into `<project>/.agents/skills` and replace the home symlinks with
+   project ones: `.claude/skills` only for the ten VRC-local skills (the plugin brings the rest),
+   and `.cursor/skills` for all of them. Move `~/.cursor/mcp.json` to `<project>/.cursor/mcp.json`.
+4. Git-ignore `.agents/`, `.cursor/` and those links; they're per machine. A later `metavr init`
+   puts everything back at user scope.
+
 ## 4. MCP facts
 
 | Fact | Source |
 |---|---|
 | `metavr mcp server` is stdio only; restart the agent after any config change; the server calls itself `hzdb` | [troubleshoot 2026-08-27] |
 | Old `/horizon/essentials/ai-tooling-mcp/` now redirects to "Install Meta VR CLI" | redirect checked 2026-10-17 |
-| The Unity library saw Claude Code reject metavr 1.8.0.17.10's `tools/list` results; the binary is unchanged in npm 1.8.1. **Not re-tested** for the IWSDK-managed entry | `unity-meta-quest-skills/mcp/README.md` |
+| The Unity library saw Claude Code 2.1.301 reject metavr 1.8.0.17.10's `tools/list` results. **Gone with Claude Code 2.1.310:** the same binary, registered as `~/.metavr/bin/metavr mcp server --update`, connected and its tools loaded. The `meta-vr` plugin's `npx` server failed once with `request _meta is missing or has malformed required fields`, then connected. Not re-tested for the IWSDK-managed entry | `unity-meta-quest-skills/mcp/README.md`; re-tested 2026-10-25 |
 
 ## 5. Meta AI Developer Assistant
 

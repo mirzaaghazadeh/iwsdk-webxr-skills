@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.2.0"
+  version: "1.3.0"
 description: >-
   Tests an IWSDK WebXR app on a physical Meta Quest in Quest Browser: developer
   mode and adb checks, the dev server over Wi-Fi or USB (`adb reverse`) and
@@ -104,6 +104,25 @@ adb -s <serial> logcat -d | tail -200                       # raw logcat, if met
 `metavr log` is a shortcut for `adb logcat` with tag and level filters. Whether Quest Browser
 mirrors page `console.*` output into logcat is **unverified**; rely on chrome://inspect for page
 logs. `metavr` options: `npm exec metavr -- <command> --help`.
+
+**Recording logcat for a whole session** (metavr 1.8, observed 2026-10-25 on a Quest 3S):
+- Piping `metavr adb logcat -f ...` or `metavr adb shell "logcat -T 1 ..."` into a file on the
+  computer wrote nothing, even after minutes.
+- What worked was letting the headset write the file:
+  `metavr adb shell "nohup logcat -v time -f /sdcard/Download/session.log -r 8192 -n 2 VrApi:I AndroidRuntime:E '*:S' > /dev/null 2>&1 &"`,
+  then `metavr adb pull /sdcard/Download/session.log` when needed. The tested run also had a
+  `Unity:V` tag; add the tags your app logs under. `VrApi` gives the `FPS=` lines.
+- `metavr adb -- logcat ...` is rejected ("unexpected argument"); write `metavr adb logcat` or
+  `metavr adb shell "logcat ..."`.
+
+**A launch that never happened** (installed TWA or any APK; metavr 1.8, observed 2026-10-25):
+- `metavr app launch <pkg> --cold-start --verify` printed "Launched" and "no crash signal",
+  yet `pidof <pkg>` was empty. Horizon OS had held the launch back. Logcat said `Launch is blocked
+  because: a Reprojected OS dialog is currently showing. Caching launch`, then `Interstitial
+  session (APP_RESUME) took more than 15s` and `appLaunchFailureBroadcastReceived`.
+- The app starts once the person in the headset closes the dialog.
+- After any launch, check `metavr adb shell "pidof <pkg>"`, or look for `ForegroundAppHandler:
+  Changing in focus immersive app ... to (<pkg>)`.
 
 ## 4. Read the real session facts
 
@@ -300,6 +319,7 @@ rejects the key (`docs/meta-reference/web-iwsdk-docs-on-meta.md`).
 | `device unauthorized` | Re-plug and accept the USB debugging prompt in the headset |
 | Dev server rejects `iwsdk.config.json` after following Meta's VR Glasses page (`unknown property "fieldOfViewMask"`) | That key isn't in IWSDK 1.0.1; remove it and use §7 (also `suppressWhenHandPointerActive` → `suppressWhenDirectPointerActive`) |
 | Headset's field of view stays narrow | `metavr device fov-sim disable`, then take the headset off and on (a reboot also clears it) |
+| `metavr app launch` says "Launched" but nothing opens | An OS dialog is showing in the headset (logcat: `Launch is blocked because`). Ask the wearer to close it; confirm with `pidof <pkg>` (§3) |
 
 ## Sources
 
@@ -314,5 +334,6 @@ rejects the key (`docs/meta-reference/web-iwsdk-docs-on-meta.md`).
 - https://vite.dev/config/preview-options (`preview.https`, `preview.host`, `preview.port`), https://vite.dev/guide/api-plugin (`configureServer`, `configurePreviewServer`)
 - Production preview, results endpoint and the reload-ends-XR behaviour: an IWSDK 1.0.1 VR prototype, 2026-10-16
 - Meta VR Glasses: https://developers.meta.com/horizon/essentials/field-of-view/ (2026-09-25; `fov-sim`, v209 notes), /test-your-app/ (2026-09-25), /get-started-with-glasses/ (2026-10-13); IWSDK 1.0.1 `docs/concepts/xr-input/gaze.md` (`targetDevicePreview`), npm `@iwsdk/core` 1.0.1 `dist/project/validation.js`, npm `@iwsdk/vite-plugin-dev` 1.0.1 `dist/index.js` (`targetDevicePreview` requires IWER)
+- Session logcat recording and the blocked launch: metavr 1.8.0.17.10 on a Quest 3S with a native APK, 2026-10-25
 
-Last verified: 2026-10-17
+Last verified: 2026-10-25 (§3 logcat and launch notes); 2026-10-17 (the rest)

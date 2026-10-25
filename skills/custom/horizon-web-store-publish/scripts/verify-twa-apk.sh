@@ -65,7 +65,8 @@ pkg=$(echo "$BADGING" | sed -n "s/^package: name='\([^']*\)'.*/\1/p")
 vcode=$(echo "$BADGING" | sed -n "s/^package: .* versionCode='\([^']*\)'.*/\1/p")
 vname=$(echo "$BADGING" | sed -n "s/^package: .* versionName='\([^']*\)'.*/\1/p")
 csdk=$(echo "$BADGING" | sed -n "s/^package: .* compileSdkVersion='\([^']*\)'.*/\1/p")
-minsdk=$(echo "$BADGING" | sed -n "s/^sdkVersion:'\([0-9]*\)'.*/\1/p")
+# aapt2 prints minSdkVersion:'23'; the old aapt printed sdkVersion:'23'.
+minsdk=$(echo "$BADGING" | sed -n -e "s/^minSdkVersion:'\([0-9]*\)'.*/\1/p" -e "s/^sdkVersion:'\([0-9]*\)'.*/\1/p" | head -n 1)
 tsdk=$(echo "$BADGING" | sed -n "s/^targetSdkVersion:'\([0-9]*\)'.*/\1/p")
 echo "APK: $APK"
 echo "package=$pkg versionCode=$vcode versionName=$vname minSdk=$minsdk targetSdk=$tsdk compileSdk=${csdk:-unset} mode=$MODE"

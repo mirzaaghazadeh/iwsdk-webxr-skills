@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.2.0"
+  version: "1.3.0"
 description: >-
   End-to-end release pipeline for shipping an IWSDK / WebXR game (or a 2D web
   app) on the Meta Horizon Store as a PWA/TWA: production build, HTTPS hosting
@@ -282,6 +282,17 @@ That runs `ovr-platform-util upload-quest-build --app-id --apk --channel --age-g
 `--publish`; channels ALPHA/BETA/RC/LIVE; no age-group or device-target option). If any
 `metavr store dist` call errors, use the Dashboard instead of retrying (`hz-store-submit`).
 
+Using `metavr store dist upload` (observed 2026-10-25 with a native Quest APK; the command
+doesn't depend on the engine):
+- It needs a signed-in Meta account. Without one it stops with "not signed in — run `metavr
+  auth login` first". The login is a device code, or `--browser` for browser SSO, and `metavr
+  init` offers it too. It's the user's account, so let them run it (`! metavr auth login`).
+- `--channel LIVE` uploads a **LIVE draft**: the build a first submission needs (see below).
+  A 97 MB APK took about 3.5 minutes. It printed a Build ID and a test-results URL, plus a warning
+  that age group self-certification is required before publishing, and the draft attached to the
+  submission normally.
+- `metavr store dist channels --app-id <id>` lists the four channels and their latest builds.
+
 Then: read Test Status; invite testers (Distribution > Release Channels; 200 users by default,
 up to 2,500 on request; channels start with no users, not even you). Builds appear in the tester's
 Library and **My Preview Apps**.
@@ -303,6 +314,14 @@ Library and **My Preview Apps**.
   `change`. An `input` listener in the capture phase that relabels the file as
   `application/vnd.android.package-archive` gets it accepted. The page reloads between
   sections, so add both again after each reload.
+- Claude in Chrome's `file_upload` takes at most **10 MB** per call (2026-10-25). A Bubblewrap
+  TWA APK fits, but an APK that bundles the game's assets may not; upload that one with
+  `metavr store dist upload` or `ovr-platform-util`.
+- After an upload, the build's **Test results** tab shows a Basic malware test and a Security
+  Vulnerability Review, which passed within minutes (2026-10-25). Its VRC tab stays empty until
+  the build is submitted and reviewed.
+- On the first submission's **Build** tab, "Use Live binary" is disabled, with the tooltip "You
+  cannot use a live binary on your first app submission": attach the LIVE draft.
 
 ## 7a. Device targeting and Meta VR Glasses
 
@@ -320,6 +339,15 @@ target-builds-by-device, 2026-09-04):
   Bubblewrap writes no `com.meta.store.defaultDeviceTargets` or `com.oculus.supportedDevices`, so
   this suffix or the Dashboard is the only control. Meta's pages disagree on whether `vrglasses`
   is a valid `supportedDevices` value; don't patch the generated manifest for it.
+- **Changing it after the upload** (observed 2026-10-25): Builds > the build > Details >
+  Supported devices, then Save. It saves on a draft too. `metavr store dist upload` has no
+  device option, and an upload whose manifest listed only Quest 3 devices still arrived with
+  Quest 2, Quest Pro, Quest 3 family and Future devices selected, so check this page after
+  every upload. If you drop devices, block them under the listing's Specs > Purchase-blocked
+  devices as well, so their owners can't buy it (`horizon-store-listing-assets` §3).
+- The same Details page lists the build's permissions. *Unverified:* on a native build it showed
+  `ACCESS_LOCAL_NETWORK` and `USE_LOOPBACK_INTERFACE`, which the APK verifier's permission list
+  didn't include. Compare the Dashboard's list with `verify-twa-apk.sh` when auditing Security.2.
 - Rules: LIVE must always keep a forward-compatible build, every build in a submission must be
   forward-compatible, and removing a device from a live build rolls that device back (ask first).
 - Before marking Future devices: hands-only play works, key UI fits 70° × 66° (IWER's VR Glasses
@@ -398,5 +426,8 @@ Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
 - npm `@meta-quest/bubblewrap-core` / `-cli` 1.24.1 `dist/lib/TwaManifest.js` (`appVersionName = data.appVersion`), `dist/lib/androidSdk/AndroidSdkTools.js` (`BUILD_TOOLS_VERSION = '34.0.0'`, `validatePath`), `bubblewrap-cli/dist/lib/AndroidSdkToolsInstaller.js` (command-line tools rev 6609375), `template_project/` (compile/target SDK 32, AGP 8.9.1, Gradle 8.11.1); read 2026-10-24
 - https://developer.android.com/tools/apksigner (`--ks-pass`, `--key-pass`: `pass:`, `env:`, `file:`, `stdin`)
 - Meta Developer Dashboard, observed while shipping an immersive IWSDK PWA (2026-10-24): Pricing tab notice, Build tab ("Only draft builds in the Production Channel…"), build upload dialog, Test Status
+- `scripts/verify-twa-apk.sh` re-run on a Bubblewrap 1.24.1 APK (2026-10-25): aapt2 prints `minSdkVersion:'23'`, which the script now reads (it read only aapt's `sdkVersion:`, so minSdk came out empty)
+- Meta Developer Dashboard and metavr 1.8.0.17.10, observed while submitting a native Quest app (2026-10-25): `metavr store dist upload --channel LIVE`, build Details (Supported devices, permissions), Test results, the first submission's Build tab
 
-Last verified: 2026-10-24
+Last verified: 2026-10-25 (the verifier's minSdk reading; metavr upload and build pages);
+2026-10-24 (the rest)
