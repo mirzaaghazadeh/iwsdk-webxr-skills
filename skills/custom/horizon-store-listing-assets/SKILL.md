@@ -5,7 +5,7 @@ metadata:
   author: Navid Mirzaaghazadeh
   author-url: https://github.com/mirzaaghazadeh
   repository: https://github.com/mirzaaghazadeh/iwsdk-webxr-skills
-  version: "1.2.0"
+  version: "1.3.0"
 description: >-
   Prepare and validate the Meta Horizon Store listing for a WebXR / IWSDK PWA or
   a 2D PWA: art specs (covers, Hero, Mini Landscape, Logo, Icon, Spatialized
@@ -66,6 +66,23 @@ no pixel values on the page). Branded assets carry the exact app title; only the
 Each extra store language needs localized assets. Test cover art with the Dashboard's creative
 A/B test on the product page (ab-testing-instructions, 2024-12-16).
 
+**Uploading assets by browser automation** (Claude in Chrome, observed 2026-10-25):
+- The Assets form has no `<input type=file>` until "choose file on your device" is clicked, and
+  that click opens a native picker an agent can't use. Patch `HTMLInputElement.prototype.click`
+  so the file input stays in the page (appended, hidden, labelled), then attach with
+  `file_upload`.
+- The first attach to a fresh input sometimes didn't register; clicking the same link and
+  attaching again worked. A cover then opens its Safe area preview: click **Use image**.
+- `file_upload` takes at most 10 MB per call. Five 2560 × 1440 screenshots (about 3 MB each) go
+  in two calls, 3 and 2, and the list appends.
+- The list showed them in a different order from the upload (3, 1, 2, 4, 5), and a synthetic
+  drag on the row handles didn't reorder them. Reorder by hand if the order matters.
+
+**Covers made from a screenshot plus the title** with ImageMagick: after a `-compose multiply`
+vignette, set `-compose over` again before compositing the logo. The compose setting carries into
+the logo's `-layers merge` and darkens it. End with `-alpha off -define png:color-type=2` for a
+24-bit file.
+
 Asset VRCs to self-review: Asset.2 (cover art: branding only, no taglines or banners), Asset.3
 (Rec: no text in the top or bottom 20% of covers), Asset.5, Asset.6 (no other VR platforms'
 hardware or logos anywhere), Asset.8 (Rec: text ≥ 24 pt), Asset.10 (Rec: "Captured on Meta Quest
@@ -100,8 +117,8 @@ Bubblewrap turns into the launcher icon; see `horizon-web-store-publish`.
 | Short description | max 500 characters (Publishing.5) |
 | Long description | max 1500 characters (Publishing.6) |
 | Search keywords | optional, **up to 5**, relevant only (Publishing.7). The field picks from suggestions and rejected a keyword with a space ("hand tracking") |
-| Categorization | Category + a **required primary genre** + up to 2 more, plus optional Gameplay mechanics. Game genres offered: Action, Adventure, Education, Hangout, Narrative, Party game, Puzzle, Rhythm, Role playing, Sandbox, Simulation, Sports. There is **no Casual or Arcade** genre: put those in keywords |
-| Specs | Game Modes, Supported Controllers, Play Area, Supported Player Modes, Comfort Level, Internet Connection, Subscription, Purchase-blocked devices, Social Features, Supported Languages in App, Early Access. The Dashboard pre-fills Internet Connection from the APK as not required; a PWA that loads from the web should say Required |
+| Categorization | Category (Apps or Games) + a **required primary genre** + up to 2 more. Optional for Games (2026-10-25): Art style and Game theme (up to 3 each), Gameplay challenge, Gameplay mechanics. Game genres offered: Action, Adventure, Education, Hangout, Narrative, Party game, Puzzle, Rhythm, Role playing, Sandbox, Simulation, Sports. There is **no Casual or Arcade** genre: put those in keywords |
+| Specs | Game Modes, Supported Controllers, Play Area, Supported Player Modes, Comfort Level, Internet Connection, Subscription, Purchase-blocked devices, Social Features, Supported Languages in App, Early Access. The Dashboard pre-fills Internet Connection from the APK. It came pre-filled as not required for a PWA (2026-10-24) and as required for a native APK (2026-10-25). A PWA that loads from the web should say Required. The options are in the Specs list below the table |
 | Details | Developer and Publisher (64 characters each; Developer defaults to the team name until "Use team name" is unticked), Website (Publishing.1, must resolve), Privacy Policy (Privacy.1-4), optional External Support (Publishing.2) and Terms of Service (Publishing.3) |
 | Content rating | Developer contact email (shared with IARC) + IARC certificate |
 
@@ -109,6 +126,22 @@ Dashboard layout (observed 2026-10-24): a submission has four tabs, **Submission
 **Build** and **App metadata**. App metadata has Name, Categorization, Specs, Details, Assets and
 Content rating, each saved on its own. **Metadata preview** shows the product page in the Store,
 the phone app and the headset for an hour, visible only to you.
+
+**Specs: what each field offers** (observed 2026-10-25 on a native Quest app; the form is the same
+for every app type):
+
+| Field | Options and behaviour |
+|---|---|
+| Early Access | Enable or Disable. It can be added only in the first submission, and removed later |
+| Player modes | Multi-select: Asynchronous multiplayer, Co-op, Local multiplayer, Massively multiplayer, Multiplayer, PvE, PvP, Single player |
+| Supported input | Auto-filled from the binary: "Touch controller and Hands" for `handtracking required="false"`, which every Bubblewrap TWA declares |
+| Play area | **Movement** or **No Movement**. The older Stationary/Roomscale wording is gone from this field |
+| Supported physical modes | Sitting, Standing, Roomscale (multi-select) |
+| Comfort level | Comfortable, Comfort: Moderate, Comfort: Intense |
+| Internet connection | Auto-filled, editable (see the Specs row above) |
+| Subscription | Not required, Required for some content, Required |
+| Purchase-blocked devices | Preselected: Quest (the first one). Offers Quest 2, Quest Pro, Quest 3 family. Blocking a device that the production build targets shows a warning; change the build's Supported devices too (`horizon-web-store-publish` §7a) |
+| Social features | Yes or No |
 
 Web-specific: a PWA loads from your server, so declare the internet requirement truthfully and
 handle offline (Functional.7, Rec). Declare only input modalities that work alone from launch
@@ -150,11 +183,44 @@ In the Dashboard (observed 2026-10-24):
   one durable unlock answers Digital Purchases **Yes** > "Purchases of digital goods" (no random
   items, no trading). That came back as ESRB Everyone, PEGI 3, with the "In-Game Purchases"
   notice. The tab ends on "IARC Certificate Created".
+- **The IARC questions for a Game** (hosted at web.iarcservices.com, 2026-10-25). The first page
+  asks the app type; the second asks, each Yes or No:
+  - violence, blood or gore;
+  - fear;
+  - sexuality, suggestiveness or dating;
+  - gambling;
+  - offensive language;
+  - drugs, alcohol or tobacco;
+  - crude humour;
+  - digital purchases, cash rewards or NFTs;
+  - users interacting or exchanging content;
+  - sharing precise location;
+  - Nazi symbols;
+  - content eroding Korean national identity;
+  - advocating terrorism;
+  - "realistic descriptions of crimes … or techniques that can be used in criminal offenses".
+
+  A Yes to the crime question adds two more: likely to be imitated by youths, and detailed
+  techniques. The last page shows every rating and needs a box ticked: "I hereby agree to the IARC
+  Terms of Use and I agree that I am the age of majority". That's the user's agreement.
+- **Crime themes move the regional ratings a lot.** A non-violent game in which characters offer
+  bribes and the player can keep them (crime Yes, both follow-ups No) came back as:
+  - ESRB Everyone, PEGI 3, USK Everyone, ClassInd All ages, Generic 3+;
+  - ACB **Mature** (Mature Themes), GRAC **15+** (Crime), DGSC **PG15** (Anti-society), Russia
+    **16+** (descriptor "Violence").
+
+  Expect this for any game in which the player can commit or depict an offence (bribery, fraud,
+  smuggling), even with no violence.
+- After the user sets the age group on the Build tab, it reads "Teens and adults (13+ or
+  applicable age in user's region)". Each app has its own age group, IARC certificate and
+  sharing preferences, so check the app name at the top left before starting.
 - **Sharing preferences:** the Submission tab shows "Please confirm your app sharing preferences
   before submitting". Those are streaming and capture by players, under Meta's Sharing Terms, which
   the user accepts or declines.
 - **"Does your app contain ads?"** on the Build tab stayed greyed out for an immersive PWA, even
-  after the age group was set (cause unknown).
+  after the age group was set (cause unknown). On a paid native app the same locked question has
+  the tooltip "This app cannot contain ads based on our Advertising Policy" (2026-10-25). Hover
+  over it to read the PWA's reason.
 
 ## 5. Privacy policy and Data Use Checkup
 
@@ -198,6 +264,10 @@ certification boxes to the user and not claim policies the developer doesn't hav
   **A PWA can only be free:** the Pricing tab says "PWAs are always free on Meta Horizon Store,
   but you can still sell add-ons and in-app purchases", and Paid app shows an empty price list
   (observed 2026-10-24). Pricing tab for a PWA: Listing type Full release, Price type Free app.
+  **Listing type** offers Coming soon, Pre-order or Full release, and can't be changed after
+  submission (2026-10-25). For paid apps, Full release adds "Prices are locked on approval and
+  cannot be changed for 30 days", with a default price per region that can be overridden per
+  country.
 - **Web IAP**: Digital Goods API + Payment Request with `https://quest.meta.com/billing`, **WebXR
   PWAs only**, **subscriptions not supported**, available only when installed from the Store
   (ALPHA and BETA count). Manage products under Monetization > Add-ons. 2D PWAs have neither a
@@ -247,5 +317,7 @@ Pages moved from `developers.meta.com/horizon/` to `/vr/` (old links redirect).
 - https://developers.meta.com/vr/policy/distribution-options/ (2026-03-23), /app-policies/ (comfort ratings §5.1, IARC/GRAC §5.2, 2026-03-10)
 - https://developers.meta.com/vr/blog/smarter-pricing-better-trials-deeper-analytics-for-VR-developers/ (2026-08-11); https://developers.meta.com/blog/meta-connect-recap-start-building-the-future-of-vr/ (2026-09-24)
 - Meta Developer Dashboard, observed while listing an immersive IWSDK PWA with a durable unlock (2026-10-24): App metadata forms, Pricing, Build and Submission tabs, IARC questionnaire, Monetization > Add-ons, Data Use Checkup
+- Meta Developer Dashboard, observed while submitting a paid native Quest app (2026-10-25): Categorization, Specs, Pricing, Assets upload, the full IARC questionnaire and its ratings, Build tab
 
-Last verified: 2026-10-24
+Last verified: 2026-10-25 (Specs, Pricing, IARC and the Assets upload in the Dashboard);
+2026-10-24 (the rest)

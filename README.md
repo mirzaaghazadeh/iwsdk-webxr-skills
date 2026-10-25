@@ -147,7 +147,7 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 | `iwsdk-grab`, `iwsdk-ray` | IWSDK | Prove grab, ray, UI clicks and distance grabbing with emulated controllers |
 | `iwsdk-debug` | IWSDK | ECS pause/query/snapshot/step/diff loops for state, physics and interaction bugs |
 | `iwsdk-testing` | **original** | Typecheck and build gates, asset checks, headless IWER smoke test, test-hook component, TypeScript e2e suite with bot players, production-build smoke, frame-stepped gameplay video, CI; with a smoke-test script |
-| `iwsdk-quest-device-testing` | **original** | Open the app on a Quest (Wi-Fi or `adb reverse`), certificates, production build over HTTPS, saving results from the headset, remote DevTools, device logs |
+| `iwsdk-quest-device-testing` | **original** | Open the app on a Quest (Wi-Fi or `adb reverse`), certificates, production build over HTTPS, saving results from the headset, remote DevTools, device logs (incl. a whole-session logcat), launches the OS held back |
 | `iwsdk-native-xr-test` | IWSDK | Script a real Quest immersive session through the IWSDK CLI |
 | `hz-vr-debug` | Meta | Logs, screenshots and video from the headset |
 | `webapp-testing` | community (Anthropic) | Playwright smoke tests for 2D pages |
@@ -170,7 +170,7 @@ MCP details and config: [mcp/README.md](mcp/README.md).
 | `horizon-web-store-publish` | **original** | **The release pipeline**: build → hosting → manifest → Bubblewrap (incl. a toolchain with no TTY, 64-bit-only APKs) → verify → sideload → ALPHA and the LIVE draft a submission needs → promote, device targeting (`quest3+`, "Future devices" for Meta VR Glasses), asking before every upload; with deploy, APK and upload scripts |
 | `iwsdk-pwa-packaging`, `hz-store-pwa` | IWSDK, Meta | The upstream PWA/TWA guides the pipeline builds on (see both ERRATA files) |
 | `horizon-web-vrc-checklist` | **original** | Every active VRC by ID, mapped to web apps (Store and Store 2D columns), each with a WebXR check and a headset test |
-| `horizon-store-listing-assets` | **original** | Store art specs (incl. Mini Landscape), metadata limits and genres, IARC, privacy policy, a step-by-step Data Use Checkup, pricing (PWAs are free; sell a durable unlock), add-ons, price A/B tests, bundles, analytics and web IAP; with an image checker |
+| `horizon-store-listing-assets` | **original** | Store art specs (incl. Mini Landscape), metadata limits and genres, every Specs option, the IARC questions and how crime themes move regional ratings, privacy policy, a step-by-step Data Use Checkup, pricing (PWAs are free; sell a durable unlock), add-ons, price A/B tests, bundles, analytics and web IAP; with an image checker |
 | `hz-store-submit` | Meta | Meta's general submission walkthrough. **Some specs are out of date**: see ERRATA |
 | `pwa-offline` | community (AQaddora) | Service-worker updates, version skew, cache headers |
 | `cf-cli`, `wrangler` | community (Cloudflare) | Host on Cloudflare (new projects / existing Wrangler projects) |

@@ -139,7 +139,9 @@ folders you copy.
 
 - In a scaffolded IWSDK project, skip `iwsdk-official` (the scaffold already has it).
 - Don't combine Meta's `meta-vr` plugin, `metavr init` or `metavr skills` with this library: they
-  install the same Meta skills.
+  install the same Meta skills. `metavr init` installs at user scope (every project); what it
+  writes, and how to move it into one project, is in
+  [meta-reference/ai-tools.md](meta-reference/ai-tools.md) §3.
 - The `scenario-blender-*` specialists need `scenario-blender-expert` next to them. The bundles keep
   them together; if you pick single skills, install the lead skill too.
 
